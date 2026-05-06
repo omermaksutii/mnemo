@@ -19,11 +19,9 @@
   "dependencies": {
     "@huggingface/transformers": "^3.0.0",
     "hnswlib-node": "^3.0.0",
-    "sql.js": "^1.10.0",
-    "uuid": "^9.0.0"
+    "sql.js": "^1.10.0"
   },
   "devDependencies": {
-    "@types/sql.js": "^1.4.9",
-    "@types/uuid": "^9.0.8"
+    "@types/sql.js": "^1.4.9"
   }
 }
