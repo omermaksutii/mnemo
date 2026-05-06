@@ -7,6 +7,7 @@ import { registerStats } from './commands/stats.js';
 import { registerExport } from './commands/export.js';
 import { registerImport } from './commands/import.js';
 import { registerDoctor } from './commands/doctor.js';
+import { registerHook } from './commands/hook.js';
 
 const program = new Command();
 program
@@ -22,6 +23,7 @@ registerStats(program);
 registerExport(program);
 registerImport(program);
 registerDoctor(program);
+registerHook(program);
 
 program.parseAsync(process.argv).catch(err => {
   console.error('mnemo:', err.message);
