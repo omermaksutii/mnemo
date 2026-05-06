@@ -1,14 +1,14 @@
 {
   "name": "mnemo-monorepo",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Persistent memory for Claude Code",
   "type": "module",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build -w @mnemo-mcp/core && npm run build -w @mnemo-mcp/server && npm run build -w @mnemo-mcp/cli",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "tsc -p packages/core/tsconfig.json --noEmit && tsc -p packages/mcp/tsconfig.json --noEmit && tsc -p packages/cli/tsconfig.json --noEmit",

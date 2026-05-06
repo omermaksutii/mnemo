@@ -3,6 +3,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 import type { MemoryRecord, MemoryScope, MemorySource, UpdateInput } from './types.js';
 
 const SCHEMA = `
@@ -42,19 +43,35 @@ export type StoreListFilter = {
 
 let cachedSqlPromise: Promise<typeof import('sql.js').default> | null = null;
 
+function locateSqlAsset(file: string): string {
+  // Use Node's resolution from our own module location — works regardless of how
+  // the consumer hoists @mnemo-mcp/core, sql.js, and friends in node_modules.
+  const require = createRequire(import.meta.url);
+  try {
+    // sql.js exposes its package.json so we can find dist/ deterministically.
+    const pkgPath = require.resolve('sql.js/package.json');
+    const candidate = join(dirname(pkgPath), 'dist', file);
+    if (existsSync(candidate)) return candidate;
+  } catch {
+    // fall through to relative scan
+  }
+
+  // Fallback: walk up from our own dir looking for any node_modules/sql.js/dist/<file>
+  let cursor = dirname(fileURLToPath(import.meta.url));
+  for (let i = 0; i < 8; i++) {
+    const c = join(cursor, 'node_modules', 'sql.js', 'dist', file);
+    if (existsSync(c)) return c;
+    const parent = dirname(cursor);
+    if (parent === cursor) break;
+    cursor = parent;
+  }
+  return file;
+}
+
 function loadSql() {
   if (!cachedSqlPromise) {
-    const here = dirname(fileURLToPath(import.meta.url));
     cachedSqlPromise = initSqlJs({
-      locateFile: (file: string) => {
-        const candidates = [
-          join(here, '..', '..', '..', 'node_modules', 'sql.js', 'dist', file),
-          join(here, '..', '..', 'node_modules', 'sql.js', 'dist', file),
-          join(here, '..', 'node_modules', 'sql.js', 'dist', file),
-        ];
-        for (const c of candidates) if (existsSync(c)) return c;
-        return file;
-      },
+      locateFile: locateSqlAsset,
     }) as unknown as Promise<typeof import('sql.js').default>;
   }
   return cachedSqlPromise;
