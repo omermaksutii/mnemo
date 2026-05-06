@@ -32,7 +32,7 @@ const program = new Command();
 program
   .name('mnemo')
   .description('Persistent memory for Claude Code')
-  .version('1.1.4');
+  .version("1.1.5");
 
 registerRemember(program);
 registerRecall(program);
