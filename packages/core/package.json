@@ -1,7 +1,28 @@
 {
   "name": "@mnemo/core",
   "version": "1.0.0",
-  "description": "Mnemo core memory engine",
+  "description": "Mnemo core — persistent semantic memory engine (ONNX embeddings + HNSW + sql.js)",
+  "license": "MIT",
+  "author": "Omer Maksuti",
+  "homepage": "https://github.com/omermaksutii/mnemo#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omermaksutii/mnemo.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/omermaksutii/mnemo/issues"
+  },
+  "keywords": [
+    "mnemo",
+    "memory",
+    "claude-code",
+    "embeddings",
+    "hnsw",
+    "semantic-search",
+    "onnx",
+    "vector-database"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -11,7 +32,9 @@
       "import": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run"
@@ -23,5 +46,8 @@
   },
   "devDependencies": {
     "@types/sql.js": "^1.4.9"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

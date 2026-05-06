@@ -1,14 +1,37 @@
 {
   "name": "@mnemo/cli",
   "version": "1.0.0",
-  "description": "Mnemo command-line interface",
+  "description": "Mnemo CLI — install Mnemo into Claude Code, capture and recall memories from your terminal",
+  "license": "MIT",
+  "author": "Omer Maksuti",
+  "homepage": "https://github.com/omermaksutii/mnemo#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omermaksutii/mnemo.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/omermaksutii/mnemo/issues"
+  },
+  "keywords": [
+    "mnemo",
+    "memory",
+    "claude-code",
+    "cli",
+    "anthropic",
+    "mcp"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
     "mnemo": "./bin/mnemo.js"
   },
-  "files": ["dist", "bin", "assets"],
+  "files": [
+    "dist",
+    "bin",
+    "assets"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run"
@@ -17,5 +40,8 @@
     "@mnemo/core": "1.0.0",
     "commander": "^12.0.0",
     "chalk": "^5.3.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

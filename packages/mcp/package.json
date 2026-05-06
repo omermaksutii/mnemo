@@ -1,14 +1,37 @@
 {
   "name": "@mnemo/mcp",
   "version": "1.0.0",
-  "description": "Mnemo MCP server for Claude Code",
+  "description": "Mnemo MCP server — exposes persistent memory tools to Claude Code",
+  "license": "MIT",
+  "author": "Omer Maksuti",
+  "homepage": "https://github.com/omermaksutii/mnemo#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/omermaksutii/mnemo.git",
+    "directory": "packages/mcp"
+  },
+  "bugs": {
+    "url": "https://github.com/omermaksutii/mnemo/issues"
+  },
+  "keywords": [
+    "mnemo",
+    "mcp",
+    "mcp-server",
+    "claude-code",
+    "memory",
+    "anthropic",
+    "model-context-protocol"
+  ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
     "mnemo-mcp": "./bin/mnemo-mcp.js"
   },
-  "files": ["dist", "bin"],
+  "files": [
+    "dist",
+    "bin"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run"
@@ -17,5 +40,8 @@
     "@mnemo/core": "1.0.0",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "zod": "^3.23.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
