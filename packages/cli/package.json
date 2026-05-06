@@ -1,6 +1,6 @@
 {
   "name": "@mnemo-mcp/cli",
-  "version": "1.1.6",
+  "version": "1.2.0",
   "description": "Mnemo CLI — install Mnemo into Claude Code, capture and recall memories from your terminal",
   "license": "MIT",
   "author": "Omer Maksuti",
@@ -37,7 +37,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@mnemo-mcp/core": "1.1.6",
+    "@mnemo-mcp/core": "1.2.0",
     "commander": "^12.0.0",
     "chalk": "^5.3.0"
   },

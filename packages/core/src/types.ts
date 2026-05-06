@@ -9,7 +9,8 @@ export type MemoryChannel =
   | 'gotcha'
   | 'todo'
   | 'anti-pattern'
-  | 'note';
+  | 'note'
+  | 'procedure';
 
 export const CHANNELS: readonly MemoryChannel[] = [
   'decision',
@@ -18,6 +19,7 @@ export const CHANNELS: readonly MemoryChannel[] = [
   'todo',
   'anti-pattern',
   'note',
+  'procedure',
 ] as const;
 
 export type MemoryRecord = {

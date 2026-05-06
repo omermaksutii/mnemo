@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 import { readFile } from 'node:fs/promises';
 import { Mnemo } from '@mnemo-mcp/core';
 import chalk from 'chalk';
+import { writeJsonResult } from '../json-mode.js';
 
 type Opts = { dataDir?: string };
 
@@ -17,6 +18,7 @@ export function registerImport(program: Command): void {
         const raw = await readFile(file, 'utf8');
         const records = JSON.parse(raw);
         await m.import(records);
+        if (writeJsonResult({ imported: records.length, file })) return;
         console.log(chalk.green('imported'), records.length, 'memories');
       } finally {
         await m.close();
