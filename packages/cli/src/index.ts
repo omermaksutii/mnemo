@@ -19,15 +19,20 @@ import { registerDead } from './commands/dead.js';
 import { registerTeam } from './commands/team.js';
 import { registerCompletion } from './commands/completion.js';
 
+// Set JSON mode before commander parses anything — the hook-based
+// approach is unreliable when --json sits between the program name and
+// the subcommand on the argv.
+if (process.argv.includes('--json')) {
+  process.env.MNEMO_JSON = '1';
+  // Strip it so subcommands don't choke on an unknown option
+  process.argv = process.argv.filter(a => a !== '--json');
+}
+
 const program = new Command();
 program
   .name('mnemo')
   .description('Persistent memory for Claude Code')
-  .version('1.1.0')
-  .option('--json', 'machine-readable JSON output')
-  .hook('preAction', thisCommand => {
-    if (thisCommand.opts().json) process.env.MNEMO_JSON = '1';
-  });
+  .version('1.1.4');
 
 registerRemember(program);
 registerRecall(program);
