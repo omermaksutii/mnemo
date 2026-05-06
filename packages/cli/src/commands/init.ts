@@ -148,13 +148,39 @@ async function mergeSettings(file: string, patch: Record<string, unknown>): Prom
   await writeFile(file, JSON.stringify(merged, null, 2));
 }
 
+const HOOK_EVENT_NAMES = new Set([
+  'SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PostToolUse',
+  'SessionEnd', 'Stop', 'SubagentStop', 'Notification',
+]);
+
+function mergeHookArrays(existing: unknown[], incoming: unknown[]): unknown[] {
+  const seen = new Set(existing.map(e => JSON.stringify(e)));
+  const out = [...existing];
+  for (const e of incoming) {
+    const k = JSON.stringify(e);
+    if (!seen.has(k)) {
+      out.push(e);
+      seen.add(k);
+    }
+  }
+  return out;
+}
+
 function deepMerge(a: Record<string, unknown>, b: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = { ...a };
   for (const [k, v] of Object.entries(b)) {
     const existing = out[k];
+    if (Array.isArray(existing) && Array.isArray(v) && HOOK_EVENT_NAMES.has(k)) {
+      // Hook arrays merge with dedup (so re-running init is idempotent)
+      out[k] = mergeHookArrays(existing, v);
+      continue;
+    }
     if (Array.isArray(existing) && Array.isArray(v)) {
-      out[k] = [...existing, ...v];
-    } else if (isPlainObject(existing) && isPlainObject(v)) {
+      // Plain arrays (e.g. mcpServers.<name>.args) replace, never concat
+      out[k] = v;
+      continue;
+    }
+    if (isPlainObject(existing) && isPlainObject(v)) {
       out[k] = deepMerge(existing, v);
     } else {
       out[k] = v;

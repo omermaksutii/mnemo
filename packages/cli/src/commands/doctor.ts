@@ -27,12 +27,12 @@ export function registerDoctor(program: Command): void {
       const checks: Check[] = [];
 
       // ---- memory engine ----
-      checks.push({ name: 'data dir', ok: existsSync(dataDir), detail: dataDir });
-      checks.push({ name: 'database', ok: existsSync(p.dbFile), detail: p.dbFile });
-
+      // Open Mnemo FIRST — it creates the dir + db on first run, so we want
+      // the existence checks to reflect post-init state.
       const embedderType = (process.env.MNEMO_EMBEDDER === 'hash' ? 'hash' : 'onnx') as 'hash' | 'onnx';
       let openOk = false;
       let total = 0;
+      let openErr = '';
       try {
         const m = await Mnemo.open({ dataDir, embedderType });
         const stats = await m.stats();
@@ -40,14 +40,18 @@ export function registerDoctor(program: Command): void {
         await m.close();
         openOk = true;
       } catch (err) {
-        checks.push({ name: 'mnemo opens', ok: false, detail: (err as Error).message });
+        openErr = (err as Error).message;
       }
+
+      checks.push({ name: 'data dir', ok: existsSync(dataDir), detail: dataDir });
+      checks.push({ name: 'database', ok: existsSync(p.dbFile), detail: p.dbFile });
       if (openOk) {
         checks.push({ name: 'mnemo opens', ok: true, detail: `${embedderType} embedder, ${total} memories` });
-        // Vector index is only persisted once memories exist (hnswlib quirk).
         const indexOk = total === 0 ? true : existsSync(p.indexFile);
         const indexDetail = total === 0 ? '(empty — index lazily created)' : p.indexFile;
         checks.push({ name: 'vector index', ok: indexOk, detail: indexDetail });
+      } else {
+        checks.push({ name: 'mnemo opens', ok: false, detail: openErr });
       }
 
       // ---- claude code integration ----
