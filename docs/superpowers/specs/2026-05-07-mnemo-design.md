@@ -64,7 +64,7 @@ Mnemo gives Claude Code a brain that survives across sessions, projects, and mac
 
 ## 4. Packages & Responsibilities
 
-### `@omermaksutii/mnemo-core`
+### `@mnemo-mcp/core`
 Pure TS. No Claude Code dependency. The only package that talks to disk.
 
 **Public API:**
@@ -88,22 +88,22 @@ class Mnemo {
 - `Store` — sql.js (WASM SQLite) for the metadata table
 - `Capture rules` — pluggable predicates that decide what's worth remembering
 
-### `@omermaksutii/mnemo-mcp`
-Wraps `@omermaksutii/mnemo-core` as an MCP server. Tools exposed:
+### `@mnemo-mcp/server`
+Wraps `@mnemo-mcp/core` as an MCP server. Tools exposed:
 - `mnemo_recall(query, k?, scope?)` — semantic search
 - `mnemo_remember(content, tags?, scope?)` — explicit capture
 - `mnemo_forget(id)` — delete
 - `mnemo_list(filter?)` — browse
 - `mnemo_stats()` — debug
 
-### `@omermaksutii/mnemo-hooks (deferred)`
+### `@mnemo-mcp/hooks (deferred)`
 Claude Code hook handlers that auto-capture and auto-inject:
 - `session-start` → load top-N project memories into context
 - `post-edit` → capture noteworthy edits (CLAUDE.md, ADRs, schema files)
 - `pre-task` → semantic search for relevant memories, inject summary
 - `session-end` → consolidate recent edits into durable memories
 
-### `@omermaksutii/mnemo-cli`
+### `@mnemo-mcp/cli`
 The terminal-facing surface and one-shot installer:
 - `mnemo init` — install MCP + hooks + skills into Claude Code config
 - `mnemo recall <query>`, `mnemo remember <text>`, `mnemo forget <id>`, `mnemo list`
@@ -182,8 +182,8 @@ Rules are pluggable via `~/.mnemo/config.json`. Users can disable any default an
 
 ## 9. Testing Strategy
 
-- **Unit**: `@omermaksutii/mnemo-core` — capture/recall/forget/list/embed/index round-trips. Target 90% line coverage.
-- **Integration**: `@omermaksutii/mnemo-mcp` against a mock MCP client. `@omermaksutii/mnemo-hooks (deferred)` against a recorded Claude Code hook payload corpus.
+- **Unit**: `@mnemo-mcp/core` — capture/recall/forget/list/embed/index round-trips. Target 90% line coverage.
+- **Integration**: `@mnemo-mcp/server` against a mock MCP client. `@mnemo-mcp/hooks (deferred)` against a recorded Claude Code hook payload corpus.
 - **End-to-end**: `mnemo init` in a throwaway dir → spawn `claude -p` with a test prompt → assert memory appears.
 - **Performance**: benchmark suite with 10k, 50k, 250k memories; assert p95 recall <100ms at 50k.
 
@@ -201,7 +201,7 @@ This metric matters because **recall hit rate is the viral metric** — it's wha
 ## 11. Distribution & Branding
 
 - **Repo**: `github.com/maksutiomer/mnemo` (or chosen GitHub handle)
-- **npm packages**: `@omermaksutii/mnemo-core`, `@omermaksutii/mnemo-mcp`, `@omermaksutii/mnemo-hooks (deferred)`, `@omermaksutii/mnemo-cli`. Single `mnemo` umbrella for `npx mnemo init`.
+- **npm packages**: `@mnemo-mcp/core`, `@mnemo-mcp/server`, `@mnemo-mcp/hooks (deferred)`, `@mnemo-mcp/cli`. Single `mnemo` umbrella for `npx mnemo init`.
 - **License**: MIT.
 - **Brand**:
   - Name: Mnemo (rhymes with "Nemo")

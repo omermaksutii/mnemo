@@ -6,7 +6,7 @@ import { Command } from 'commander';
 import { registerExport } from '../src/commands/export.js';
 import { registerImport } from '../src/commands/import.js';
 import { registerDoctor } from '../src/commands/doctor.js';
-import { Mnemo } from '@omermaksutii/mnemo-core';
+import { Mnemo } from '@mnemo-mcp/core';
 
 describe('mnemo io & doctor', () => {
   let dir: string;

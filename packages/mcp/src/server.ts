@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { Mnemo, projectHashOf } from '@omermaksutii/mnemo-core';
+import { Mnemo, projectHashOf } from '@mnemo-mcp/core';
 
 export type CreateServerOpts = {
   dataDir?: string;

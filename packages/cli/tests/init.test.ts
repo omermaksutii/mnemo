@@ -35,7 +35,7 @@ describe('mnemo init', () => {
     expect(readFileSync(skill, 'utf8')).toMatch(/Persistent memory/);
     const cfg = JSON.parse(readFileSync(settings, 'utf8'));
     expect(cfg.mcpServers.mnemo.command).toBe('npx');
-    expect(cfg.mcpServers.mnemo.args).toContain('@omermaksutii/mnemo-mcp');
+    expect(cfg.mcpServers.mnemo.args).toContain('@mnemo-mcp/server');
   });
 
   it('--with-hooks adds hook entries', async () => {

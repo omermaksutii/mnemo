@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Mnemo, projectHashOf } from '@omermaksutii/mnemo-core';
+import { Mnemo, projectHashOf } from '@mnemo-mcp/core';
 import { runUserPromptSubmit } from '../src/hooks/user-prompt-submit.js';
 
 describe('user-prompt-submit hook', () => {

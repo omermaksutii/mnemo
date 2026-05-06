@@ -1,4 +1,4 @@
-import { Mnemo, projectHashOf } from '@omermaksutii/mnemo-core';
+import { Mnemo, projectHashOf } from '@mnemo-mcp/core';
 import { shouldAutoCapture, snippet } from './capture-rules.js';
 
 type Payload = {

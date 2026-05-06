@@ -13,7 +13,7 @@ Mnemo gives Claude Code a brain that survives across sessions. It captures decis
 
 ```bash
 # install the CLI
-npm install -g @omermaksutii/mnemo-cli
+npm install -g @mnemo-mcp/cli
 
 # install Mnemo into Claude Code (skill + MCP server)
 mnemo init
@@ -59,11 +59,11 @@ Mnemo gives you semantic, on-demand memory:
 ```
 Claude Code session
   ├── /mnemo skill              ← teaches Claude when to call the tools
-  ├── @omermaksutii/mnemo-mcp server          ← exposes recall/remember/forget/list/stats
-  └── @omermaksutii/mnemo-cli hooks           ← session-start, pre-task, post-edit auto-wiring
+  ├── @mnemo-mcp/server server          ← exposes recall/remember/forget/list/stats
+  └── @mnemo-mcp/cli hooks           ← session-start, pre-task, post-edit auto-wiring
               │
               ▼
-       @omermaksutii/mnemo-core
+       @mnemo-mcp/core
        ├── ONNX all-MiniLM-L6-v2  (384-dim embeddings, ~25MB, lazy)
        ├── HNSW vector index      (sub-100ms recall at 50k memories)
        └── sql.js (WASM SQLite)   (~/.mnemo/memory.db)
@@ -93,9 +93,9 @@ Recency decays with a 30-day half-life. Access boost saturates at 20 reads.
 ## Layout
 
 ```
-@omermaksutii/mnemo-core   — pure TS memory engine
-@omermaksutii/mnemo-mcp    — MCP server (drop into Claude Code)
-@omermaksutii/mnemo-cli    — terminal commands + hook handlers + init
+@mnemo-mcp/core   — pure TS memory engine
+@mnemo-mcp/server    — MCP server (drop into Claude Code)
+@mnemo-mcp/cli    — terminal commands + hook handlers + init
 ```
 
 ## Roadmap

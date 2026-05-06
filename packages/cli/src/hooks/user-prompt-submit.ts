@@ -1,4 +1,4 @@
-import { Mnemo, projectHashOf } from '@omermaksutii/mnemo-core';
+import { Mnemo, projectHashOf } from '@mnemo-mcp/core';
 
 type Payload = {
   prompt?: string;

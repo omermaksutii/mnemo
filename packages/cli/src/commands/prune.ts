@@ -1,5 +1,5 @@
 import type { Command } from 'commander';
-import { Mnemo } from '@omermaksutii/mnemo-core';
+import { Mnemo } from '@mnemo-mcp/core';
 import chalk from 'chalk';
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';

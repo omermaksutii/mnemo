@@ -1,4 +1,4 @@
-import { Mnemo, projectHashOf } from '@omermaksutii/mnemo-core';
+import { Mnemo, projectHashOf } from '@mnemo-mcp/core';
 
 type Payload = {
   tool_input?: { description?: string; prompt?: string };

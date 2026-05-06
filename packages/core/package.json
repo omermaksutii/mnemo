@@ -1,5 +1,5 @@
 {
-  "name": "@omermaksutii/mnemo-core",
+  "name": "@mnemo-mcp/core",
   "version": "1.0.0",
   "description": "Mnemo core — persistent semantic memory engine (ONNX embeddings + HNSW + sql.js)",
   "license": "MIT",

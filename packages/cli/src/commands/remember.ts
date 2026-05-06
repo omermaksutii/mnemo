@@ -1,5 +1,5 @@
 import type { Command } from 'commander';
-import { Mnemo, projectHashOf, expiresAtFromTtl } from '@omermaksutii/mnemo-core';
+import { Mnemo, projectHashOf, expiresAtFromTtl } from '@mnemo-mcp/core';
 import chalk from 'chalk';
 
 type Opts = {

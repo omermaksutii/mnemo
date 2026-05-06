@@ -1,5 +1,5 @@
 import type { Command } from 'commander';
-import { Mnemo, projectHashOf, sinceFromAgo, type MemorySource } from '@omermaksutii/mnemo-core';
+import { Mnemo, projectHashOf, sinceFromAgo, type MemorySource } from '@mnemo-mcp/core';
 import chalk from 'chalk';
 import { formatHit } from '../output.js';
 

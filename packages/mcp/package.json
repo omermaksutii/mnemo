@@ -1,5 +1,5 @@
 {
-  "name": "@omermaksutii/mnemo-mcp",
+  "name": "@mnemo-mcp/server",
   "version": "1.0.0",
   "description": "Mnemo MCP server — exposes persistent memory tools to Claude Code",
   "license": "MIT",
@@ -37,7 +37,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@omermaksutii/mnemo-core": "1.0.0",
+    "@mnemo-mcp/core": "1.0.0",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "zod": "^3.23.0"
   },

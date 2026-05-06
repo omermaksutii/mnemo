@@ -1,5 +1,5 @@
 import type { Command } from 'commander';
-import { Mnemo } from '@omermaksutii/mnemo-core';
+import { Mnemo } from '@mnemo-mcp/core';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -57,7 +57,7 @@ export function registerEdit(program: Command): void {
         if (opts.expiresIn !== undefined) {
           if (opts.expiresIn === '') fields.expiresAt = null;
           else {
-            const { expiresAtFromTtl } = await import('@omermaksutii/mnemo-core');
+            const { expiresAtFromTtl } = await import('@mnemo-mcp/core');
             const exp = expiresAtFromTtl(opts.expiresIn);
             if (exp === null) {
               console.error(chalk.red('invalid --expires-in value:'), opts.expiresIn);
