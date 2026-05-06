@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1 — 2026-05-07
+
+### Fixed
+- `@mnemo-mcp/core`: sql.js could not locate its WASM file when the package was installed from npm (only worked from a workspace symlink). Now resolves `sql.js/dist/sql-wasm.wasm` via `require.resolve('sql.js/package.json')`, which works in any node_modules layout.
+
+### Build
+- Root `npm run build` now explicitly orders `core → server → cli` so cross-package types resolve in CI.
+
 ## 1.0.0 — 2026-05-07
 
 First public release. Persistent memory for Claude Code is now installable in one command.

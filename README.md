@@ -3,6 +3,9 @@
 > Persistent memory for Claude Code. Your AI never starts from scratch again.
 
 [![CI](https://github.com/omermaksutii/mnemo/actions/workflows/ci.yml/badge.svg)](https://github.com/omermaksutii/mnemo/actions)
+[![npm: cli](https://img.shields.io/npm/v/@mnemo-mcp/cli?label=%40mnemo-mcp%2Fcli&color=cb3837)](https://www.npmjs.com/package/@mnemo-mcp/cli)
+[![npm: server](https://img.shields.io/npm/v/@mnemo-mcp/server?label=%40mnemo-mcp%2Fserver&color=cb3837)](https://www.npmjs.com/package/@mnemo-mcp/server)
+[![npm: core](https://img.shields.io/npm/v/@mnemo-mcp/core?label=%40mnemo-mcp%2Fcore&color=cb3837)](https://www.npmjs.com/package/@mnemo-mcp/core)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Mnemo gives Claude Code a brain that survives across sessions. It captures decisions, conventions, and preferences — and recalls them by meaning, on demand, with sub-100ms semantic search.
