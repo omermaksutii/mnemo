@@ -63,15 +63,19 @@ export class Store {
   static async open(path: string): Promise<Store> {
     const SQL = (await loadSql()) as unknown as { Database: new (data?: Uint8Array) => Database };
     let db: Database;
+    let isFresh = false;
     if (existsSync(path)) {
       const bytes = await readFile(path);
       db = new SQL.Database(new Uint8Array(bytes));
     } else {
       await mkdir(dirname(path), { recursive: true });
       db = new SQL.Database();
+      isFresh = true;
     }
     db.exec(SCHEMA);
-    return new Store(db, path);
+    const store = new Store(db, path);
+    if (isFresh) await store.flush();
+    return store;
   }
 
   async upsert(rec: MemoryRecord): Promise<void> {
