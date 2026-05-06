@@ -1,5 +1,7 @@
-import { HierarchicalNSW } from 'hnswlib-node';
+import hnswlib, { type HierarchicalNSW as HnswType } from 'hnswlib-node';
 import { existsSync } from 'node:fs';
+
+const { HierarchicalNSW } = hnswlib;
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
@@ -31,7 +33,7 @@ export class VectorIndex {
   private labelToId = new Map<number, string>();
 
   private constructor(
-    private hnsw: HierarchicalNSW,
+    private hnsw: HnswType,
     private opts: Required<VectorIndexOpts>,
   ) {}
 
