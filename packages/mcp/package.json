@@ -1,0 +1,21 @@
+{
+  "name": "@mnemo/mcp",
+  "version": "0.1.0",
+  "description": "Mnemo MCP server for Claude Code",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "mnemo-mcp": "./bin/mnemo-mcp.js"
+  },
+  "files": ["dist", "bin"],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@mnemo/core": "0.1.0",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.23.0"
+  }
+}
