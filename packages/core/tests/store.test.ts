@@ -19,6 +19,7 @@ function sample(over: Partial<MemoryRecord> = {}): MemoryRecord {
     accessCount: 0,
     lastAccessedAt: now,
     expiresAt: null,
+    channel: null,
     ...over,
   };
 }

@@ -16,6 +16,14 @@ import type {
   RecallOpts,
   UpdateInput,
 } from './types.js';
+import { detectSecrets } from './secret-guard.js';
+
+export class SecretContentError extends Error {
+  constructor(public matches: ReturnType<typeof detectSecrets>) {
+    super(`refusing to capture: detected ${matches.length} secret(s) (${matches.map(m => m.kind).join(', ')}). Pass allowSensitive: true to override.`);
+    this.name = 'SecretContentError';
+  }
+}
 import { stat } from 'node:fs/promises';
 
 export class Mnemo {
@@ -63,6 +71,10 @@ export class Mnemo {
   lastCaptureDeduped = false;
 
   async capture(input: CaptureInput): Promise<MemoryRecord> {
+    if (!input.allowSensitive) {
+      const matches = detectSecrets(input.content);
+      if (matches.length > 0) throw new SecretContentError(matches);
+    }
     const dedupThreshold = input.dedupThreshold ?? 0.95;
     const v = await this.embedder.embed(input.content);
     this.lastCaptureDeduped = false;
@@ -81,6 +93,7 @@ export class Mnemo {
           content: input.content,
           tags: dedupeTags([...(existing.tags ?? []), ...(input.tags ?? [])]),
           expiresAt: input.expiresAt !== undefined ? input.expiresAt : existing.expiresAt,
+          channel: input.channel !== undefined ? input.channel : existing.channel,
         });
         if (updated) {
           const v2 = await this.embedder.embed(updated.content);
@@ -94,7 +107,7 @@ export class Mnemo {
 
     const now = Date.now();
     const rec: MemoryRecord = {
-      id: randomUUID(),
+      id: input.id ?? randomUUID(),
       scope: input.scope ?? 'project',
       projectHash: input.projectHash ?? null,
       source: input.source ?? 'manual',
@@ -105,6 +118,7 @@ export class Mnemo {
       accessCount: 0,
       lastAccessedAt: now,
       expiresAt: input.expiresAt ?? null,
+      channel: input.channel ?? null,
     };
     await this.store.upsert(rec);
     await this.index.add(rec.id, v);
@@ -119,6 +133,7 @@ export class Mnemo {
     const candidates = await this.index.query(v, Math.max(k * 4, 20));
     const requiredTags = opts.tags ?? [];
     const sources = opts.source ? (Array.isArray(opts.source) ? opts.source : [opts.source]) : null;
+    const channels = opts.channel ? (Array.isArray(opts.channel) ? opts.channel : [opts.channel]) : null;
     const since = opts.since ?? 0;
     const now = Date.now();
     const out: MemoryHit[] = [];
@@ -131,6 +146,7 @@ export class Mnemo {
       if (!opts.includeExpired && rec.expiresAt !== null && rec.expiresAt <= now) continue;
       if (since && rec.updatedAt < since) continue;
       if (sources && !sources.includes(rec.source)) continue;
+      if (channels && (!rec.channel || !channels.includes(rec.channel))) continue;
       if (requiredTags.length && !requiredTags.every(t => rec.tags.includes(t))) continue;
       const s = score(cand.similarity, rec);
       if (s < minScore) continue;
@@ -173,10 +189,12 @@ export class Mnemo {
     return {
       totalMemories: counts.total,
       byScope: counts.byScope,
+      byChannel: counts.byChannel,
       indexSize: this.index.size(),
       embeddingDimension: this.embedder.dimension,
       storageBytes,
       expired: counts.expired,
+      neverRecalled: counts.neverRecalled,
     };
   }
 
@@ -190,11 +208,34 @@ export class Mnemo {
         ...rec,
         source: 'imported',
         expiresAt: rec.expiresAt ?? null,
+        channel: rec.channel ?? null,
       });
       const v = await this.embedder.embed(rec.content);
       await this.index.add(rec.id, v);
     }
     await this.index.save();
+  }
+
+  /** Compute ranking score breakdown for a hit. Used by `mnemo why`. */
+  scoreBreakdown(similarity: number, rec: MemoryRecord): {
+    similarity: number;
+    recency: number;
+    accessBoost: number;
+    composite: number;
+  } {
+    const now = Date.now();
+    const ageDays = Math.max(0, (now - rec.lastAccessedAt) / 86400_000);
+    const recency = Math.exp(-ageDays / 30);
+    const accessBoost = Math.min(1, rec.accessCount / 20);
+    const composite = score(similarity, rec);
+    return { similarity, recency, accessBoost, composite };
+  }
+
+  /** Memories that have never been recalled. Useful for `mnemo dead`. */
+  async dead(opts: { olderThanDays?: number } = {}): Promise<MemoryRecord[]> {
+    const all = await this.store.list({ includeExpired: true });
+    const cutoff = opts.olderThanDays ? Date.now() - opts.olderThanDays * 86400_000 : Infinity;
+    return all.filter(r => r.accessCount === 0 && r.createdAt < cutoff);
   }
 
   async prune(opts: PruneOpts = {}): Promise<PruneResult> {

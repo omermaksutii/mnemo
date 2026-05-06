@@ -11,12 +11,23 @@ import { registerHook } from './commands/hook.js';
 import { registerInit } from './commands/init.js';
 import { registerEdit } from './commands/edit.js';
 import { registerPrune } from './commands/prune.js';
+import { registerIngest } from './commands/ingest.js';
+import { registerCite } from './commands/cite.js';
+import { registerWhy } from './commands/why.js';
+import { registerDigest } from './commands/digest.js';
+import { registerDead } from './commands/dead.js';
+import { registerTeam } from './commands/team.js';
+import { registerCompletion } from './commands/completion.js';
 
 const program = new Command();
 program
   .name('mnemo')
   .description('Persistent memory for Claude Code')
-  .version('1.0.0');
+  .version('1.1.0')
+  .option('--json', 'machine-readable JSON output')
+  .hook('preAction', thisCommand => {
+    if (thisCommand.opts().json) process.env.MNEMO_JSON = '1';
+  });
 
 registerRemember(program);
 registerRecall(program);
@@ -30,6 +41,13 @@ registerHook(program);
 registerInit(program);
 registerEdit(program);
 registerPrune(program);
+registerIngest(program);
+registerCite(program);
+registerWhy(program);
+registerDigest(program);
+registerDead(program);
+registerTeam(program);
+registerCompletion(program);
 
 program.parseAsync(process.argv).catch(err => {
   console.error('mnemo:', err.message);

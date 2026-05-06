@@ -7,7 +7,7 @@ function rec(over: Partial<MemoryRecord> = {}): MemoryRecord {
   return {
     id: 'x', scope: 'project', projectHash: null, source: 'manual',
     content: 'c', tags: [], createdAt: now, updatedAt: now,
-    accessCount: 0, lastAccessedAt: now, expiresAt: null, ...over,
+    accessCount: 0, lastAccessedAt: now, expiresAt: null, channel: null, ...over,
   };
 }
 

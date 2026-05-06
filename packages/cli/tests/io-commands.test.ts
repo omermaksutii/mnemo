@@ -64,12 +64,44 @@ describe('mnemo io & doctor', () => {
     }
   });
 
-  it('doctor reports healthy on a valid setup', async () => {
-    const m = await Mnemo.open({ dataDir: dir, embedderType: 'hash' });
-    await m.close();
-    const program = new Command().exitOverride();
-    registerDoctor(program);
-    await program.parseAsync(['node', 'mnemo', 'doctor']);
-    expect(logs.join('\n')).toMatch(/healthy/i);
+  it('doctor reports healthy on a fully configured setup', async () => {
+    const fs = await import('node:fs');
+    const fsp = await import('node:fs/promises');
+    const claudeDir = join(dir, '.claude');
+    process.env.MNEMO_CLAUDE_DIR = claudeDir;
+    try {
+      // Simulate an installed setup: skill file + settings.json with mcp registered
+      fs.mkdirSync(join(claudeDir, 'skills', 'mnemo'), { recursive: true });
+      await fsp.writeFile(join(claudeDir, 'skills', 'mnemo', 'SKILL.md'), '---\nname: mnemo\n---\n');
+      await fsp.writeFile(
+        join(claudeDir, 'settings.json'),
+        JSON.stringify({ mcpServers: { mnemo: { command: 'npx', args: ['-y', '@mnemo-mcp/server'] } } }),
+      );
+
+      const m = await Mnemo.open({ dataDir: dir, embedderType: 'hash' });
+      await m.close();
+      const program = new Command().exitOverride();
+      registerDoctor(program);
+      await program.parseAsync(['node', 'mnemo', 'doctor']);
+      expect(logs.join('\n')).toMatch(/healthy/i);
+    } finally {
+      delete process.env.MNEMO_CLAUDE_DIR;
+    }
+  });
+
+  it('doctor flags missing Claude Code integration', async () => {
+    process.env.MNEMO_CLAUDE_DIR = join(dir, '.claude-missing');
+    try {
+      const m = await Mnemo.open({ dataDir: dir, embedderType: 'hash' });
+      await m.close();
+      const program = new Command().exitOverride();
+      registerDoctor(program);
+      await program.parseAsync(['node', 'mnemo', 'doctor']);
+      const out = logs.join('\n');
+      expect(out).toMatch(/issues detected/i);
+      expect(out).toMatch(/mnemo init/);
+    } finally {
+      delete process.env.MNEMO_CLAUDE_DIR;
+    }
   });
 });

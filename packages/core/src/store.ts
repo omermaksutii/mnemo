@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import type { MemoryRecord, MemoryScope, MemorySource, UpdateInput } from './types.js';
+import type { MemoryChannel, MemoryRecord, MemoryScope, MemorySource, UpdateInput } from './types.js';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS memories (
@@ -18,23 +18,28 @@ CREATE TABLE IF NOT EXISTS memories (
   updated_at INTEGER NOT NULL,
   access_count INTEGER NOT NULL DEFAULT 0,
   last_accessed_at INTEGER NOT NULL,
-  expires_at INTEGER
+  expires_at INTEGER,
+  channel TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_scope_project ON memories(scope, project_hash);
 CREATE INDEX IF NOT EXISTS idx_updated ON memories(updated_at);
 CREATE INDEX IF NOT EXISTS idx_expires ON memories(expires_at);
+CREATE INDEX IF NOT EXISTS idx_channel ON memories(channel);
 `;
 
 export type StoreCounts = {
   total: number;
   byScope: Record<MemoryScope, number>;
+  byChannel: Record<string, number>;
   expired: number;
+  neverRecalled: number;
 };
 
 export type StoreListFilter = {
   scope?: MemoryScope;
   projectHash?: string | null;
   source?: MemorySource | MemorySource[];
+  channel?: MemoryChannel | MemoryChannel[];
   tags?: string[];
   limit?: number;
   since?: number;
@@ -96,12 +101,9 @@ export class Store {
       isFresh = true;
     }
     db.exec(SCHEMA);
-    // Best-effort migration for legacy dbs that predate expires_at:
-    try {
-      db.exec('ALTER TABLE memories ADD COLUMN expires_at INTEGER');
-    } catch {
-      // column already exists — fine
-    }
+    // Best-effort migrations for legacy dbs:
+    try { db.exec('ALTER TABLE memories ADD COLUMN expires_at INTEGER'); } catch {}
+    try { db.exec('ALTER TABLE memories ADD COLUMN channel TEXT'); } catch {}
     const store = new Store(db, path);
     if (isFresh) await store.flush();
     return store;
@@ -110,8 +112,8 @@ export class Store {
   async upsert(rec: MemoryRecord): Promise<void> {
     this.db.run(
       `INSERT INTO memories
-       (id, scope, project_hash, source, content, tags, created_at, updated_at, access_count, last_accessed_at, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       (id, scope, project_hash, source, content, tags, created_at, updated_at, access_count, last_accessed_at, expires_at, channel)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          scope=excluded.scope,
          project_hash=excluded.project_hash,
@@ -119,7 +121,8 @@ export class Store {
          content=excluded.content,
          tags=excluded.tags,
          updated_at=excluded.updated_at,
-         expires_at=excluded.expires_at`,
+         expires_at=excluded.expires_at,
+         channel=excluded.channel`,
       [
         rec.id,
         rec.scope,
@@ -132,6 +135,7 @@ export class Store {
         rec.accessCount,
         rec.lastAccessedAt,
         rec.expiresAt,
+        rec.channel,
       ],
     );
     await this.flush();
@@ -147,6 +151,7 @@ export class Store {
       scope: fields.scope ?? existing.scope,
       projectHash: fields.projectHash !== undefined ? fields.projectHash : existing.projectHash,
       expiresAt: fields.expiresAt !== undefined ? fields.expiresAt : existing.expiresAt,
+      channel: fields.channel !== undefined ? fields.channel : existing.channel,
       updatedAt: Date.now(),
     };
     await this.upsert(next);
@@ -194,6 +199,11 @@ export class Store {
       where.push(`source IN (${sources.map(() => '?').join(',')})`);
       args.push(...sources);
     }
+    if (filter.channel) {
+      const chans = Array.isArray(filter.channel) ? filter.channel : [filter.channel];
+      where.push(`channel IN (${chans.map(() => '?').join(',')})`);
+      args.push(...chans);
+    }
     if (!filter.includeExpired) {
       where.push('(expires_at IS NULL OR expires_at > ?)');
       args.push(Date.now());
@@ -213,7 +223,7 @@ export class Store {
 
   async count(): Promise<StoreCounts> {
     const stmt = this.db.prepare('SELECT scope, COUNT(*) as n FROM memories GROUP BY scope');
-    const byScope: Record<MemoryScope, number> = { project: 0, global: 0 };
+    const byScope: Record<MemoryScope, number> = { project: 0, global: 0, team: 0 };
     let total = 0;
     while (stmt.step()) {
       const row = stmt.getAsObject() as { scope: MemoryScope; n: number };
@@ -226,7 +236,18 @@ export class Store {
     let expired = 0;
     if (expStmt.step()) expired = Number((expStmt.getAsObject() as { n: number }).n);
     expStmt.free();
-    return { total, byScope, expired };
+    const chanStmt = this.db.prepare(`SELECT channel, COUNT(*) as n FROM memories WHERE channel IS NOT NULL GROUP BY channel`);
+    const byChannel: Record<string, number> = {};
+    while (chanStmt.step()) {
+      const row = chanStmt.getAsObject() as { channel: string; n: number };
+      byChannel[row.channel] = Number(row.n);
+    }
+    chanStmt.free();
+    const ncStmt = this.db.prepare('SELECT COUNT(*) as n FROM memories WHERE access_count = 0');
+    let neverRecalled = 0;
+    if (ncStmt.step()) neverRecalled = Number((ncStmt.getAsObject() as { n: number }).n);
+    ncStmt.free();
+    return { total, byScope, byChannel, expired, neverRecalled };
   }
 
   async bumpAccess(id: string): Promise<void> {
@@ -260,6 +281,7 @@ export class Store {
       accessCount: Number(row.access_count),
       lastAccessedAt: Number(row.last_accessed_at),
       expiresAt: row.expires_at == null ? null : Number(row.expires_at),
+      channel: (row.channel as MemoryChannel | null) ?? null,
     };
   }
 }

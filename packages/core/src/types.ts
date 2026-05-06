@@ -1,6 +1,24 @@
-export type MemoryScope = 'project' | 'global';
+export type MemoryScope = 'project' | 'global' | 'team';
 
-export type MemorySource = 'manual' | 'auto-edit' | 'auto-task' | 'imported';
+export type MemorySource = 'manual' | 'auto-edit' | 'auto-task' | 'imported' | 'team-sync';
+
+/** Structured category beyond freeform tags. Channels are an opinionated set. */
+export type MemoryChannel =
+  | 'decision'
+  | 'convention'
+  | 'gotcha'
+  | 'todo'
+  | 'anti-pattern'
+  | 'note';
+
+export const CHANNELS: readonly MemoryChannel[] = [
+  'decision',
+  'convention',
+  'gotcha',
+  'todo',
+  'anti-pattern',
+  'note',
+] as const;
 
 export type MemoryRecord = {
   id: string;
@@ -15,6 +33,8 @@ export type MemoryRecord = {
   lastAccessedAt: number;
   /** Unix ms after which the memory should be considered expired and skipped from recall. null = never. */
   expiresAt: number | null;
+  /** Optional structured channel for organizing memories beyond tags. */
+  channel: MemoryChannel | null;
 };
 
 export type CaptureInput = {
@@ -23,6 +43,7 @@ export type CaptureInput = {
   projectHash?: string | null;
   source?: MemorySource;
   tags?: string[];
+  channel?: MemoryChannel | null;
   /** Unix ms or null. Convenience helper: pass `Date.now() + ms` for relative TTL. */
   expiresAt?: number | null;
   /**
@@ -31,6 +52,10 @@ export type CaptureInput = {
    * Pass `0` to always insert.
    */
   dedupThreshold?: number;
+  /** Override secret-guard. Default false. */
+  allowSensitive?: boolean;
+  /** Pre-supplied id (used when importing/team-sync to preserve identity). */
+  id?: string;
 };
 
 export type RecallOpts = {
@@ -42,6 +67,8 @@ export type RecallOpts = {
   tags?: string[];
   /** Filter results by source. */
   source?: MemorySource | MemorySource[];
+  /** Filter results by channel. */
+  channel?: MemoryChannel | MemoryChannel[];
   /** Only consider memories with `updatedAt >= since` (unix ms). */
   since?: number;
   /** Include expired memories in results. Default false. */
@@ -59,6 +86,7 @@ export type ListFilter = {
   projectHash?: string | null;
   tags?: string[];
   source?: MemorySource | MemorySource[];
+  channel?: MemoryChannel | MemoryChannel[];
   limit?: number;
   since?: number;
   includeExpired?: boolean;
@@ -70,6 +98,7 @@ export type UpdateInput = {
   scope?: MemoryScope;
   projectHash?: string | null;
   expiresAt?: number | null;
+  channel?: MemoryChannel | null;
 };
 
 export type PruneOpts = {
@@ -94,10 +123,12 @@ export type PruneResult = {
 export type MnemoStats = {
   totalMemories: number;
   byScope: Record<MemoryScope, number>;
+  byChannel: Record<string, number>;
   indexSize: number;
   embeddingDimension: number;
   storageBytes: number;
   expired: number;
+  neverRecalled: number;
 };
 
 export type MnemoOpts = {

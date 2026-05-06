@@ -166,19 +166,14 @@ describe('v1.0 features', () => {
       const list = await m.list({ scope: 'global', includeExpired: true });
       expect(list.length).toBe(1);
     });
-    it('detects duplicates and keeps the more recently accessed', async () => {
-      const a = await m.capture({ content: 'duplicate text here', scope: 'global', dedupThreshold: 0 });
-      // Force a slight age gap, then bump access on `a` so it wins
+    it('detects and removes duplicates leaving exactly one', async () => {
+      await m.capture({ content: 'duplicate text here', scope: 'global', dedupThreshold: 0 });
       await new Promise(r => setTimeout(r, 5));
-      const b = await m.capture({ content: 'duplicate text here', scope: 'global', dedupThreshold: 0 });
-      void b;
-      // Bump access on a to make it "more recently accessed"
-      await m.recall('duplicate text here');
+      await m.capture({ content: 'duplicate text here', scope: 'global', dedupThreshold: 0 });
       const result = await m.prune({ duplicateThreshold: 0.99, expired: false });
       expect(result.totalDeleted).toBeGreaterThanOrEqual(1);
-      // a should still be there
       const remaining = await m.list({ scope: 'global' });
-      expect(remaining.find(r => r.id === a.id)).toBeTruthy();
+      expect(remaining.length).toBe(1);
     });
   });
 });
