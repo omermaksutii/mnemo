@@ -8,7 +8,7 @@
   "bin": {
     "mnemo": "./bin/mnemo.js"
   },
-  "files": ["dist", "bin"],
+  "files": ["dist", "bin", "assets"],
   "scripts": {
     "build": "tsc",
     "test": "vitest run"
