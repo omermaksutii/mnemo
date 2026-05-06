@@ -6,7 +6,7 @@ import { Command } from 'commander';
 import { registerList } from '../src/commands/list.js';
 import { registerForget } from '../src/commands/forget.js';
 import { registerStats } from '../src/commands/stats.js';
-import { Mnemo } from '@mnemo/core';
+import { Mnemo } from '@omermaksutii/mnemo-core';
 
 describe('mnemo misc commands', () => {
   let dir: string;

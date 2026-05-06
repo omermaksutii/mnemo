@@ -1,5 +1,5 @@
 import chalk from 'chalk';
-import type { MemoryHit, MemoryRecord, MnemoStats } from '@mnemo/core';
+import type { MemoryHit, MemoryRecord, MnemoStats } from '@omermaksutii/mnemo-core';
 
 export function formatHit(hit: MemoryHit): string {
   const id = chalk.dim(hit.record.id.slice(0, 8));

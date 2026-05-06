@@ -1,4 +1,4 @@
-import { Mnemo, projectHashOf } from '@mnemo/core';
+import { Mnemo, projectHashOf } from '@omermaksutii/mnemo-core';
 
 type Payload = { session_id?: string; source?: string; cwd?: string };
 

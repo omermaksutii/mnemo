@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Command } from 'commander';
 import { registerRemember } from '../src/commands/remember.js';
-import { Mnemo } from '@mnemo/core';
+import { Mnemo } from '@omermaksutii/mnemo-core';
 
 describe('mnemo remember', () => {
   let dir: string;

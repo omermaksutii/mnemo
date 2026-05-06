@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Mnemo, projectHashOf } from '@mnemo/core';
+import { Mnemo, projectHashOf } from '@omermaksutii/mnemo-core';
 import { runSessionStart } from '../src/hooks/session-start.js';
 import { runPreTask } from '../src/hooks/pre-task.js';
 import { runPostEdit } from '../src/hooks/post-edit.js';

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Mnemo } from '@mnemo/core';
+import { Mnemo } from '@omermaksutii/mnemo-core';
 
 const RUN = process.env.MNEMO_E2E === '1';
 const d = RUN ? describe : describe.skip;

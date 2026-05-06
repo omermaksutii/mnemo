@@ -3,7 +3,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { MemoryRecord, MemoryScope } from './types.js';
+import type { MemoryRecord, MemoryScope, MemorySource, UpdateInput } from './types.js';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS memories (
@@ -16,22 +16,28 @@ CREATE TABLE IF NOT EXISTS memories (
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   access_count INTEGER NOT NULL DEFAULT 0,
-  last_accessed_at INTEGER NOT NULL
+  last_accessed_at INTEGER NOT NULL,
+  expires_at INTEGER
 );
 CREATE INDEX IF NOT EXISTS idx_scope_project ON memories(scope, project_hash);
 CREATE INDEX IF NOT EXISTS idx_updated ON memories(updated_at);
+CREATE INDEX IF NOT EXISTS idx_expires ON memories(expires_at);
 `;
 
 export type StoreCounts = {
   total: number;
   byScope: Record<MemoryScope, number>;
+  expired: number;
 };
 
 export type StoreListFilter = {
   scope?: MemoryScope;
   projectHash?: string | null;
+  source?: MemorySource | MemorySource[];
+  tags?: string[];
   limit?: number;
   since?: number;
+  includeExpired?: boolean;
 };
 
 let cachedSqlPromise: Promise<typeof import('sql.js').default> | null = null;
@@ -73,6 +79,12 @@ export class Store {
       isFresh = true;
     }
     db.exec(SCHEMA);
+    // Best-effort migration for legacy dbs that predate expires_at:
+    try {
+      db.exec('ALTER TABLE memories ADD COLUMN expires_at INTEGER');
+    } catch {
+      // column already exists — fine
+    }
     const store = new Store(db, path);
     if (isFresh) await store.flush();
     return store;
@@ -81,15 +93,16 @@ export class Store {
   async upsert(rec: MemoryRecord): Promise<void> {
     this.db.run(
       `INSERT INTO memories
-       (id, scope, project_hash, source, content, tags, created_at, updated_at, access_count, last_accessed_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       (id, scope, project_hash, source, content, tags, created_at, updated_at, access_count, last_accessed_at, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          scope=excluded.scope,
          project_hash=excluded.project_hash,
          source=excluded.source,
          content=excluded.content,
          tags=excluded.tags,
-         updated_at=excluded.updated_at`,
+         updated_at=excluded.updated_at,
+         expires_at=excluded.expires_at`,
       [
         rec.id,
         rec.scope,
@@ -101,9 +114,26 @@ export class Store {
         rec.updatedAt,
         rec.accessCount,
         rec.lastAccessedAt,
+        rec.expiresAt,
       ],
     );
     await this.flush();
+  }
+
+  async update(id: string, fields: UpdateInput): Promise<MemoryRecord | null> {
+    const existing = await this.get(id);
+    if (!existing) return null;
+    const next: MemoryRecord = {
+      ...existing,
+      content: fields.content ?? existing.content,
+      tags: fields.tags ?? existing.tags,
+      scope: fields.scope ?? existing.scope,
+      projectHash: fields.projectHash !== undefined ? fields.projectHash : existing.projectHash,
+      expiresAt: fields.expiresAt !== undefined ? fields.expiresAt : existing.expiresAt,
+      updatedAt: Date.now(),
+    };
+    await this.upsert(next);
+    return next;
   }
 
   async get(id: string): Promise<MemoryRecord | null> {
@@ -142,13 +172,26 @@ export class Store {
       where.push('updated_at >= ?');
       args.push(filter.since);
     }
+    if (filter.source) {
+      const sources = Array.isArray(filter.source) ? filter.source : [filter.source];
+      where.push(`source IN (${sources.map(() => '?').join(',')})`);
+      args.push(...sources);
+    }
+    if (!filter.includeExpired) {
+      where.push('(expires_at IS NULL OR expires_at > ?)');
+      args.push(Date.now());
+    }
     const sql = `SELECT * FROM memories ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY updated_at DESC ${filter.limit ? 'LIMIT ' + Number(filter.limit) : ''}`;
     const stmt = this.db.prepare(sql);
     if (args.length) stmt.bind(args as never);
-    const out: MemoryRecord[] = [];
-    while (stmt.step()) out.push(this.fromRow(stmt.getAsObject()));
+    let rows: MemoryRecord[] = [];
+    while (stmt.step()) rows.push(this.fromRow(stmt.getAsObject()));
     stmt.free();
-    return out;
+    if (filter.tags && filter.tags.length) {
+      const required = filter.tags;
+      rows = rows.filter(r => required.every(t => r.tags.includes(t)));
+    }
+    return rows;
   }
 
   async count(): Promise<StoreCounts> {
@@ -161,7 +204,12 @@ export class Store {
       total += row.n;
     }
     stmt.free();
-    return { total, byScope };
+    const expStmt = this.db.prepare('SELECT COUNT(*) as n FROM memories WHERE expires_at IS NOT NULL AND expires_at <= ?');
+    expStmt.bind([Date.now()]);
+    let expired = 0;
+    if (expStmt.step()) expired = Number((expStmt.getAsObject() as { n: number }).n);
+    expStmt.free();
+    return { total, byScope, expired };
   }
 
   async bumpAccess(id: string): Promise<void> {
@@ -194,6 +242,7 @@ export class Store {
       updatedAt: Number(row.updated_at),
       accessCount: Number(row.access_count),
       lastAccessedAt: Number(row.last_accessed_at),
+      expiresAt: row.expires_at == null ? null : Number(row.expires_at),
     };
   }
 }

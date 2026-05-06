@@ -1,5 +1,5 @@
 import type { Command } from 'commander';
-import { Mnemo } from '@mnemo/core';
+import { Mnemo } from '@omermaksutii/mnemo-core';
 import { formatStats } from '../output.js';
 
 type Opts = { dataDir?: string };

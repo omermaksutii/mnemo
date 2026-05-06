@@ -1,6 +1,6 @@
 import type { Command } from 'commander';
 import { writeFile } from 'node:fs/promises';
-import { Mnemo } from '@mnemo/core';
+import { Mnemo } from '@omermaksutii/mnemo-core';
 import chalk from 'chalk';
 
 type Opts = { out: string; dataDir?: string };

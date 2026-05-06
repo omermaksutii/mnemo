@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 import { runSessionStart } from '../hooks/session-start.js';
 import { runPreTask } from '../hooks/pre-task.js';
 import { runPostEdit } from '../hooks/post-edit.js';
+import { runUserPromptSubmit } from '../hooks/user-prompt-submit.js';
 
 type Handler = (payload: Record<string, unknown>) => Promise<string>;
 
@@ -9,6 +10,7 @@ const HANDLERS: Record<string, Handler> = {
   'session-start': runSessionStart as Handler,
   'pre-task': runPreTask as Handler,
   'post-edit': runPostEdit as Handler,
+  'user-prompt-submit': runUserPromptSubmit as Handler,
 };
 
 async function readStdin(): Promise<Record<string, unknown>> {
@@ -69,6 +71,7 @@ function hookEventNameFor(name: string): string {
     case 'session-start': return 'SessionStart';
     case 'pre-task': return 'PreToolUse';
     case 'post-edit': return 'PostToolUse';
+    case 'user-prompt-submit': return 'UserPromptSubmit';
     default: return name;
   }
 }

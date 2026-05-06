@@ -89,7 +89,7 @@ function mcpPatch(): Record<string, unknown> {
     mcpServers: {
       mnemo: {
         command: 'npx',
-        args: ['-y', '@mnemo/mcp'],
+        args: ['-y', '@omermaksutii/mnemo-mcp'],
       },
     },
   };
@@ -101,7 +101,14 @@ function hooksPatch(): Record<string, unknown> {
       SessionStart: [
         {
           hooks: [
-            { type: 'command', command: 'npx -y @mnemo/cli hook session-start --print-json' },
+            { type: 'command', command: 'npx -y @omermaksutii/mnemo-cli hook session-start --print-json' },
+          ],
+        },
+      ],
+      UserPromptSubmit: [
+        {
+          hooks: [
+            { type: 'command', command: 'npx -y @omermaksutii/mnemo-cli hook user-prompt-submit --print-json' },
           ],
         },
       ],
@@ -109,7 +116,7 @@ function hooksPatch(): Record<string, unknown> {
         {
           matcher: 'Task',
           hooks: [
-            { type: 'command', command: 'npx -y @mnemo/cli hook pre-task --print-json' },
+            { type: 'command', command: 'npx -y @omermaksutii/mnemo-cli hook pre-task --print-json' },
           ],
         },
       ],
@@ -117,7 +124,7 @@ function hooksPatch(): Record<string, unknown> {
         {
           matcher: 'Edit|Write|MultiEdit',
           hooks: [
-            { type: 'command', command: 'npx -y @mnemo/cli hook post-edit' },
+            { type: 'command', command: 'npx -y @omermaksutii/mnemo-cli hook post-edit' },
           ],
         },
       ],

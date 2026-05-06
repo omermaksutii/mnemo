@@ -1,5 +1,5 @@
 import type { Command } from 'commander';
-import { Mnemo } from '@mnemo/core';
+import { Mnemo } from '@omermaksutii/mnemo-core';
 import chalk from 'chalk';
 import { formatRecord } from '../output.js';
 
