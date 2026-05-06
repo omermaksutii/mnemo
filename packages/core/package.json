@@ -1,6 +1,6 @@
 {
   "name": "@mnemo-mcp/core",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Mnemo core — persistent semantic memory engine (ONNX embeddings + HNSW + sql.js)",
   "license": "MIT",
   "author": "Omer Maksuti",

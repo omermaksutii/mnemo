@@ -27,7 +27,7 @@ describe('v1.1 features', () => {
 
   describe('channels', () => {
     it('exposes the canonical channel list', () => {
-      expect(CHANNELS).toEqual(['decision', 'convention', 'gotcha', 'todo', 'anti-pattern', 'note']);
+      expect(CHANNELS).toEqual(['decision', 'convention', 'gotcha', 'todo', 'anti-pattern', 'note', 'procedure']);
     });
 
     it('captures and recalls by channel', async () => {
