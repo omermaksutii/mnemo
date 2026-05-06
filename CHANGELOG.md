@@ -1,5 +1,37 @@
 # Changelog
 
+## 1.1.5 — 2026-05-07
+
+Same feature set as 1.1.0 but with the live-install bugs ironed out.
+
+### Fixed (since 1.1.0)
+- `1.1.1`: empty HNSW index reloaded from disk would refuse new points (hnswlib quirk) — now deferred persistence until first capture.
+- `1.1.3`: `mnemo doctor` no longer reports FAIL for missing index file when DB is empty.
+- `1.1.4`: `--json` flag now works in any argv position via pre-parse.
+- `1.1.5`: `mnemo stats` and `mnemo list` honor `--json` and `-c <channel>` filter.
+
+## 1.1.0 — 2026-05-07
+
+10 new features added on top of 1.0.
+
+### Added
+- **Memory channels** (`decision`, `convention`, `gotcha`, `todo`, `anti-pattern`, `note`). Use `-c <channel>` on remember/recall/list. Auto-inferred during ingest.
+- **Secret guard** that refuses to capture GitHub/npm/AWS/OpenAI/Anthropic/Stripe tokens, JWTs, and private keys. `--allow-sensitive` overrides.
+- `mnemo ingest <file>` — markdown-aware bulk import.
+- `mnemo cite <id>` — emits `[mem:abc123]` reference for prompt injection.
+- `mnemo why <id> [-q query]` — provenance + ranking breakdown.
+- `mnemo digest [--since 7d]` — activity summary with top-recalled and never-recalled stats.
+- `mnemo dead [--older-than 7d]` — never-recalled candidates for prune.
+- **Team mode**: `mnemo team init|push|pull|status` with `.mnemo/team.json` git-synced shared memories.
+- `mnemo recall -i` — arrow-key interactive picker (no external deps).
+- Global `--json` flag for machine-readable output.
+- `mnemo completion bash|zsh|fish` for shell completion scripts.
+- New `MemoryChannel` type, `MnemoStats.byChannel` and `.neverRecalled`, `Mnemo.dead()`, `Mnemo.scoreBreakdown()`.
+
+### Changed
+- `MemoryScope` adds `'team'`. `MemorySource` adds `'team-sync'`.
+- Doctor test in CI fixed to use `MNEMO_CLAUDE_DIR` for setup.
+
 ## 1.0.1 — 2026-05-07
 
 ### Fixed
