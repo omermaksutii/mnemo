@@ -1,0 +1,26 @@
+{
+  "name": "mnemo-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Persistent memory for Claude Code",
+  "type": "module",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc -p packages/core/tsconfig.json --noEmit && tsc -p packages/cli/tsconfig.json --noEmit",
+    "clean": "rm -rf packages/*/dist"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.4.0",
+    "tsx": "^4.7.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
