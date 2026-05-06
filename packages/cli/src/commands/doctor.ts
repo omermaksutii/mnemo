@@ -29,7 +29,6 @@ export function registerDoctor(program: Command): void {
       // ---- memory engine ----
       checks.push({ name: 'data dir', ok: existsSync(dataDir), detail: dataDir });
       checks.push({ name: 'database', ok: existsSync(p.dbFile), detail: p.dbFile });
-      checks.push({ name: 'vector index', ok: existsSync(p.indexFile), detail: p.indexFile });
 
       const embedderType = (process.env.MNEMO_EMBEDDER === 'hash' ? 'hash' : 'onnx') as 'hash' | 'onnx';
       let openOk = false;
@@ -45,6 +44,10 @@ export function registerDoctor(program: Command): void {
       }
       if (openOk) {
         checks.push({ name: 'mnemo opens', ok: true, detail: `${embedderType} embedder, ${total} memories` });
+        // Vector index is only persisted once memories exist (hnswlib quirk).
+        const indexOk = total === 0 ? true : existsSync(p.indexFile);
+        const indexDetail = total === 0 ? '(empty — index lazily created)' : p.indexFile;
+        checks.push({ name: 'vector index', ok: indexOk, detail: indexDetail });
       }
 
       // ---- claude code integration ----
