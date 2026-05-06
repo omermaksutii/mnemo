@@ -2,7 +2,7 @@ import hnswlib, { type HierarchicalNSW as HnswType } from 'hnswlib-node';
 import { existsSync } from 'node:fs';
 
 const { HierarchicalNSW } = hnswlib;
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, unlink } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 export type VectorIndexOpts = {
@@ -109,6 +109,15 @@ export class VectorIndex {
   }
 
   async save(): Promise<void> {
+    // hnswlib-node has a quirk where a saved-then-reloaded empty index
+    // refuses to accept new points ("exceeds the specified limit"). Avoid
+    // it by only persisting the HNSW binary once we actually have entries.
+    if (this.idToLabel.size === 0) {
+      // Best-effort cleanup of any prior empty file.
+      try { await unlink(this.opts.path); } catch {}
+      try { await unlink(VectorIndex.mapPath(this.opts.path)); } catch {}
+      return;
+    }
     this.hnsw.writeIndexSync(this.opts.path);
     const map: LabelMap = {
       entries: [...this.idToLabel.entries()],
