@@ -14,7 +14,7 @@ const program = new Command();
 program
   .name('mnemo')
   .description('Persistent memory for Claude Code')
-  .version('0.1.0');
+  .version('1.0.0');
 
 registerRemember(program);
 registerRecall(program);

@@ -1,6 +1,6 @@
 {
   "name": "@mnemo/cli",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Mnemo command-line interface",
   "type": "module",
   "main": "dist/index.js",
@@ -14,7 +14,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@mnemo/core": "0.1.0",
+    "@mnemo/core": "1.0.0",
     "commander": "^12.0.0",
     "chalk": "^5.3.0"
   }
