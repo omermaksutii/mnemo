@@ -110,8 +110,16 @@ Recency decays with a 30-day half-life. Access boost saturates at 20 reads.
 - ✅ **v0.3** — hooks (session-start, pre-task, post-edit)
 - ✅ **v0.4** — `/mnemo` skill
 - ✅ **v1.0** — `mnemo init`, beefier doctor, CI, polish
-- ⏳ **v1.1** — team mode (git-synced shared memory)
-- ⏳ **v2.0** — opt-in hosted sync, web UI
+- ✅ **v1.1** — team mode, channels, secret guard, ingest, why, digest, dead, cite, interactive recall, JSON output, completions
+- ✅ **v1.2** — JSON mode in all commands, idempotent init, doctor robustness
+- ✅ **v2.0** — procedural memory: `mnemo procedure record/run/suggest/done` + 2 new MCP tools + auto-suggestion via `pre-task` hook
+- ⏳ **v2.1** — knowledge graph (entities + relations on top of vector layer)
+- ⏳ **v2.2** — self-reflective learning (auto-capture anti-patterns from `Stop`/`SubagentStop` hooks)
+- ⏳ **v2.3** — cross-agent memory (Cursor, Aider, custom MCP)
+- ⏳ **v2.4** — plug-in framework (custom embedders, rankers, capture rules)
+- ⏳ **v2.5** — hosted optional sync + web UI
+
+See [ROADMAP.md](ROADMAP.md) for design notes on each.
 
 ## Development
 
