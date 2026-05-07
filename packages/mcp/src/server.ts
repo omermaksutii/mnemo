@@ -126,6 +126,45 @@ export async function createServer(opts: CreateServerOpts = {}): Promise<{ serve
     },
   );
 
+  server.tool(
+    'mnemo_procedure_suggest',
+    'Find a procedural workflow that matches a task description, if one exists',
+    {
+      task: z.string().describe('Description of the task you are about to start'),
+      min_score: z.number().min(0).max(1).optional().describe('Minimum composite match score (default 0.4)'),
+    },
+    async args => {
+      const proc = await mnemo.suggestProcedure(args.task, { minScore: args.min_score ?? 0.4 });
+      if (!proc) return { content: [{ type: 'text', text: 'no matching procedure' }] };
+      const lines = [
+        `procedure: ${proc.name}`,
+        proc.description,
+        '',
+        ...proc.steps.map((s, i) => `${i + 1}. ${s}`),
+        '',
+        `runs=${proc.runs} successes=${proc.successes} failures=${proc.failures}`,
+      ];
+      return { content: [{ type: 'text', text: lines.join('\n') }] };
+    },
+  );
+
+  server.tool(
+    'mnemo_procedure_run',
+    'Retrieve a named procedure as a checklist (use before executing the workflow)',
+    { name: z.string().describe('Procedure name (kebab-case)') },
+    async args => {
+      const proc = await mnemo.findProcedure(args.name);
+      if (!proc) return { content: [{ type: 'text', text: `no procedure named "${args.name}"` }] };
+      const lines = [
+        `## ${proc.name}`,
+        proc.description,
+        '',
+        ...proc.steps.map(s => `- [ ] ${s}`),
+      ];
+      return { content: [{ type: 'text', text: lines.join('\n') }] };
+    },
+  );
+
   return {
     server,
     close: async () => {

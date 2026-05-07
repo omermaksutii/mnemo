@@ -11,12 +11,20 @@ import type {
   MemoryRecord,
   MnemoOpts,
   MnemoStats,
+  Procedure,
   PruneOpts,
   PruneResult,
   RecallOpts,
   UpdateInput,
 } from './types.js';
 import { detectSecrets } from './secret-guard.js';
+import {
+  procedureFromRecord,
+  procedureMetadata,
+  procedureToContent,
+  validateProcedureName,
+  type RecordProcedureInput,
+} from './procedure.js';
 
 export class SecretContentError extends Error {
   constructor(public matches: ReturnType<typeof detectSecrets>) {
@@ -119,6 +127,7 @@ export class Mnemo {
       lastAccessedAt: now,
       expiresAt: input.expiresAt ?? null,
       channel: input.channel ?? null,
+      metadata: input.metadata ?? null,
     };
     await this.store.upsert(rec);
     await this.index.add(rec.id, v);
@@ -236,6 +245,93 @@ export class Mnemo {
     const all = await this.store.list({ includeExpired: true });
     const cutoff = opts.olderThanDays ? Date.now() - opts.olderThanDays * 86400_000 : Infinity;
     return all.filter(r => r.accessCount === 0 && r.createdAt < cutoff);
+  }
+
+  // ---------- procedural memory (v2.0) ----------
+
+  /** Capture a procedure as a memory with `channel: 'procedure'`. */
+  async recordProcedure(input: RecordProcedureInput): Promise<Procedure> {
+    validateProcedureName(input.name);
+    if (input.steps.length === 0) throw new Error('procedure must have at least one step');
+    const existing = await this.findProcedure(input.name, input.scope);
+    if (existing) {
+      const updated = await this.update(existing.memoryId, {
+        content: procedureToContent(input),
+        metadata: { ...procedureMetadata(input), runs: existing.runs, successes: existing.successes, failures: existing.failures },
+      });
+      const proc = updated && procedureFromRecord(updated);
+      if (!proc) throw new Error('failed to update procedure');
+      return proc;
+    }
+    const rec = await this.capture({
+      content: procedureToContent(input),
+      scope: input.scope ?? 'project',
+      projectHash: input.projectHash ?? null,
+      tags: ['procedure', input.name],
+      channel: 'procedure',
+      metadata: procedureMetadata(input),
+      dedupThreshold: 0,
+    });
+    const proc = procedureFromRecord(rec);
+    if (!proc) throw new Error('failed to record procedure');
+    return proc;
+  }
+
+  /** Find a procedure by exact name. */
+  async findProcedure(name: string, scope?: 'project' | 'global' | 'team'): Promise<Procedure | null> {
+    const list = await this.store.list({
+      channel: 'procedure',
+      scope,
+      includeExpired: true,
+    });
+    for (const r of list) {
+      const p = procedureFromRecord(r);
+      if (p && p.name === name) return p;
+    }
+    return null;
+  }
+
+  /** List all known procedures. */
+  async listProcedures(scope?: 'project' | 'global' | 'team'): Promise<Procedure[]> {
+    const list = await this.store.list({ channel: 'procedure', scope, includeExpired: true });
+    return list.map(r => procedureFromRecord(r)).filter((p): p is Procedure => p !== null);
+  }
+
+  /** Find the procedure that best matches a task description, or null if no good match. */
+  async suggestProcedure(taskDescription: string, opts: { minScore?: number } = {}): Promise<Procedure | null> {
+    const minScore = opts.minScore ?? 0.4;
+    const hits = await this.recall(taskDescription, { k: 5, channel: 'procedure', scope: 'all' });
+    for (const h of hits) {
+      if (h.score < minScore) continue;
+      const p = procedureFromRecord(h.record);
+      if (p) return p;
+    }
+    return null;
+  }
+
+  /** Record an outcome for a procedure run. */
+  async recordProcedureOutcome(name: string, success: boolean): Promise<Procedure | null> {
+    const proc = await this.findProcedure(name);
+    if (!proc) return null;
+    const updated = await this.update(proc.memoryId, {
+      metadata: {
+        name: proc.name,
+        description: proc.description,
+        steps: proc.steps,
+        runs: proc.runs + 1,
+        successes: proc.successes + (success ? 1 : 0),
+        failures: proc.failures + (success ? 0 : 1),
+      },
+    });
+    return updated ? procedureFromRecord(updated) : null;
+  }
+
+  /** Delete a procedure by name. */
+  async deleteProcedure(name: string): Promise<boolean> {
+    const proc = await this.findProcedure(name);
+    if (!proc) return false;
+    await this.forget(proc.memoryId);
+    return true;
   }
 
   async prune(opts: PruneOpts = {}): Promise<PruneResult> {

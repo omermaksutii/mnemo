@@ -1,4 +1,4 @@
-export const VERSION = '1.1.0';
+export const VERSION = '2.0.0';
 export * from './types.js';
 export { Mnemo, SecretContentError } from './mnemo.js';
 export { HashEmbedder } from './embedder.js';
@@ -9,3 +9,10 @@ export { detectSecrets, hasSecrets } from './secret-guard.js';
 export type { SecretMatch } from './secret-guard.js';
 export { parseMarkdown, parsePlain } from './ingest.js';
 export type { IngestChunk } from './ingest.js';
+export {
+  procedureFromRecord,
+  procedureMetadata,
+  procedureToContent,
+  validateProcedureName,
+} from './procedure.js';
+export type { RecordProcedureInput } from './procedure.js';

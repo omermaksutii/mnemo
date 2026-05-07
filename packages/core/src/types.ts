@@ -37,6 +37,25 @@ export type MemoryRecord = {
   expiresAt: number | null;
   /** Optional structured channel for organizing memories beyond tags. */
   channel: MemoryChannel | null;
+  /** Free-form JSON metadata. Used by procedures (steps, run counts) and future v2 features. */
+  metadata: Record<string, unknown> | null;
+};
+
+/** Procedural memory: a named workflow Claude can follow step-by-step. */
+export type Procedure = {
+  /** Stable identifier (kebab-case recommended). */
+  name: string;
+  /** One-line summary used for semantic matching. */
+  description: string;
+  /** Ordered steps. Each step is one action. */
+  steps: string[];
+  /** Stats. */
+  runs: number;
+  successes: number;
+  failures: number;
+  /** Underlying memory id so we can update it. */
+  memoryId: string;
+  scope: MemoryScope;
 };
 
 export type CaptureInput = {
@@ -46,6 +65,7 @@ export type CaptureInput = {
   source?: MemorySource;
   tags?: string[];
   channel?: MemoryChannel | null;
+  metadata?: Record<string, unknown> | null;
   /** Unix ms or null. Convenience helper: pass `Date.now() + ms` for relative TTL. */
   expiresAt?: number | null;
   /**
@@ -101,6 +121,7 @@ export type UpdateInput = {
   projectHash?: string | null;
   expiresAt?: number | null;
   channel?: MemoryChannel | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 export type PruneOpts = {

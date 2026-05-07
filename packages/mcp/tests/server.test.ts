@@ -32,7 +32,15 @@ describe('mnemo MCP server', () => {
   it('lists all expected tools', async () => {
     const { tools } = await client.listTools();
     const names = tools.map(t => t.name).sort();
-    expect(names).toEqual(['mnemo_forget', 'mnemo_list', 'mnemo_recall', 'mnemo_remember', 'mnemo_stats']);
+    expect(names).toEqual([
+      'mnemo_forget',
+      'mnemo_list',
+      'mnemo_procedure_run',
+      'mnemo_procedure_suggest',
+      'mnemo_recall',
+      'mnemo_remember',
+      'mnemo_stats',
+    ]);
   });
 
   it('round-trips remember + recall + list + forget + stats', async () => {

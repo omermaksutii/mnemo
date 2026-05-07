@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS memories (
   access_count INTEGER NOT NULL DEFAULT 0,
   last_accessed_at INTEGER NOT NULL,
   expires_at INTEGER,
-  channel TEXT
+  channel TEXT,
+  metadata TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_scope_project ON memories(scope, project_hash);
 CREATE INDEX IF NOT EXISTS idx_updated ON memories(updated_at);
@@ -104,6 +105,7 @@ export class Store {
     // Best-effort migrations for legacy dbs:
     try { db.exec('ALTER TABLE memories ADD COLUMN expires_at INTEGER'); } catch {}
     try { db.exec('ALTER TABLE memories ADD COLUMN channel TEXT'); } catch {}
+    try { db.exec('ALTER TABLE memories ADD COLUMN metadata TEXT'); } catch {}
     const store = new Store(db, path);
     if (isFresh) await store.flush();
     return store;
@@ -112,8 +114,8 @@ export class Store {
   async upsert(rec: MemoryRecord): Promise<void> {
     this.db.run(
       `INSERT INTO memories
-       (id, scope, project_hash, source, content, tags, created_at, updated_at, access_count, last_accessed_at, expires_at, channel)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       (id, scope, project_hash, source, content, tags, created_at, updated_at, access_count, last_accessed_at, expires_at, channel, metadata)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          scope=excluded.scope,
          project_hash=excluded.project_hash,
@@ -122,7 +124,8 @@ export class Store {
          tags=excluded.tags,
          updated_at=excluded.updated_at,
          expires_at=excluded.expires_at,
-         channel=excluded.channel`,
+         channel=excluded.channel,
+         metadata=excluded.metadata`,
       [
         rec.id,
         rec.scope,
@@ -136,6 +139,7 @@ export class Store {
         rec.lastAccessedAt,
         rec.expiresAt,
         rec.channel,
+        rec.metadata == null ? null : JSON.stringify(rec.metadata),
       ],
     );
     await this.flush();
@@ -152,6 +156,7 @@ export class Store {
       projectHash: fields.projectHash !== undefined ? fields.projectHash : existing.projectHash,
       expiresAt: fields.expiresAt !== undefined ? fields.expiresAt : existing.expiresAt,
       channel: fields.channel !== undefined ? fields.channel : existing.channel,
+      metadata: fields.metadata !== undefined ? fields.metadata : existing.metadata,
       updatedAt: Date.now(),
     };
     await this.upsert(next);
@@ -282,6 +287,7 @@ export class Store {
       lastAccessedAt: Number(row.last_accessed_at),
       expiresAt: row.expires_at == null ? null : Number(row.expires_at),
       channel: (row.channel as MemoryChannel | null) ?? null,
+      metadata: row.metadata == null ? null : JSON.parse(String(row.metadata)),
     };
   }
 }
