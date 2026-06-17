@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.5.0 — 2026-06-17
+
+Plug-in framework (roadmap v2.4). Other developers extend Mnemo.
+
+### Added
+- **Plugin API** — `MnemoPlugin` can supply a custom `embedder`, `ranker`, `captureRules`, and named `hooks`. A plugin module exports a default (or `mnemoPlugin`) factory.
+- **Discovery** — `discoverPlugins()` reads the `mnemo.plugins` list from package.json and auto-includes deps matching the `@mnemo-mcp/plugin-*` / `mnemo-plugin-*` convention. Broken plugins are skipped, never thrown.
+- Engine wiring — `Mnemo.open({ plugins })` uses a plugin-provided embedder/ranker when present; `recall` and `scoreBreakdown` honor the custom ranker.
+- `mnemo plugins` — lists discovered plugins and their extension points. Opt-out with `MNEMO_NO_PLUGINS=1`.
+- CLI `recall`/`remember` and the MCP server now load discovered plugins.
+- New exports: `discoverPlugins`, `composePlugins`, `pluginSpecsFromManifest`, and types `MnemoPlugin`, `PluginFactory`, `RankerFn`, `CaptureRule`, `DiscoverOpts`.
+
 ## 2.4.0 — 2026-06-17
 
 Cross-agent memory (roadmap v2.3). One memory layer shared across agents.

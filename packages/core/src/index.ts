@@ -1,4 +1,4 @@
-export const VERSION = '2.4.0';
+export const VERSION = '2.5.0';
 export * from './types.js';
 export { Mnemo, SecretContentError } from './mnemo.js';
 export { HashEmbedder } from './embedder.js';
@@ -31,3 +31,5 @@ export {
 export type { QuantizedVector } from './quantize.js';
 export { detectFailures, summarizeFailures } from './reflect.js';
 export type { FailureKind, FailureSignal } from './reflect.js';
+export { discoverPlugins, composePlugins, pluginSpecsFromManifest } from './plugin.js';
+export type { MnemoPlugin, PluginFactory, RankerFn, CaptureRule, DiscoverOpts } from './plugin.js';

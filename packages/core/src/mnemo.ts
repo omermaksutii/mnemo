@@ -23,6 +23,7 @@ import type {
   UpdateInput,
 } from './types.js';
 import { detectSecrets } from './secret-guard.js';
+import { composePlugins, type RankerFn } from './plugin.js';
 import {
   procedureFromRecord,
   procedureMetadata,
@@ -46,14 +47,20 @@ export class Mnemo {
     private embedder: Embedder,
     private dataDir: string,
     private defaultAgent: string | null,
+    private ranker: RankerFn,
   ) {}
 
   static async open(opts: MnemoOpts = {}): Promise<Mnemo> {
     const dataDir = resolveDataDir(opts.dataDir);
     const p = paths(dataDir);
 
+    const composed = composePlugins(opts.plugins ?? []);
+
     let embedder: Embedder;
-    if (opts.embedderType === 'onnx') {
+    if (composed.embedder) {
+      // A plugin-provided embedder takes precedence over the built-ins.
+      embedder = await composed.embedder({ dataDir });
+    } else if (opts.embedderType === 'onnx') {
       const { OnnxEmbedder } = await import('./onnx-embedder.js');
       embedder = await OnnxEmbedder.load(p.modelDir);
     } else {
@@ -79,7 +86,8 @@ export class Mnemo {
     }
 
     const defaultAgent = opts.defaultAgent ?? process.env.MNEMO_AGENT ?? null;
-    return new Mnemo(store, index, embedder, dataDir, defaultAgent);
+    const ranker: RankerFn = composed.ranker ?? ((sim, rec, now) => score(sim, rec, undefined, now));
+    return new Mnemo(store, index, embedder, dataDir, defaultAgent, ranker);
   }
 
   /** True when the most recent `capture()` updated an existing memory instead of inserting a new one. */
@@ -166,7 +174,7 @@ export class Mnemo {
       if (channels && (!rec.channel || !channels.includes(rec.channel))) continue;
       if (opts.agent && rec.agent !== opts.agent) continue;
       if (requiredTags.length && !requiredTags.every(t => rec.tags.includes(t))) continue;
-      let s = score(cand.similarity, rec);
+      let s = this.ranker(cand.similarity, rec, now);
       if (opts.antiPatternBoost && rec.channel === 'anti-pattern') s += opts.antiPatternBoost;
       if (s < minScore) continue;
       out.push({ record: rec, score: s, similarity: cand.similarity });
@@ -253,7 +261,7 @@ export class Mnemo {
     const ageDays = Math.max(0, (now - rec.lastAccessedAt) / 86400_000);
     const recency = Math.exp(-ageDays / 30);
     const accessBoost = Math.min(1, rec.accessCount / 20);
-    const composite = score(similarity, rec);
+    const composite = this.ranker(similarity, rec, now);
     return { similarity, recency, accessBoost, composite };
   }
 

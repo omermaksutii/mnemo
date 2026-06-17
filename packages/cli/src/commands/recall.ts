@@ -1,9 +1,10 @@
 import type { Command } from 'commander';
-import { Mnemo, projectHashOf, sinceFromAgo, CHANNELS, type MemorySource, type MemoryChannel } from '@mnemo-mcp/core';
+import { projectHashOf, sinceFromAgo, CHANNELS, type MemorySource, type MemoryChannel } from '@mnemo-mcp/core';
 import chalk from 'chalk';
 import { formatHit, formatExplain } from '../output.js';
 import { interactiveRecall } from '../interactive.js';
 import { writeJsonResult } from '../json-mode.js';
+import { openEngine } from '../engine.js';
 
 type Opts = {
   top: string;
@@ -42,8 +43,7 @@ export function registerRecall(program: Command): void {
     .option('--data-dir <path>', 'Data directory override')
     .action(async (queryParts: string[], opts: Opts) => {
       const query = queryParts.join(' ');
-      const embedderType = (process.env.MNEMO_EMBEDDER === 'hash' ? 'hash' : 'onnx') as 'hash' | 'onnx';
-      const m = await Mnemo.open({ dataDir: opts.dataDir, embedderType });
+      const m = await openEngine({ dataDir: opts.dataDir });
       try {
         const projectHash = opts.scope === 'project' ? projectHashOf(process.cwd()) : undefined;
         const tags = opts.tag ? opts.tag.split(',').map(t => t.trim()).filter(Boolean) : undefined;

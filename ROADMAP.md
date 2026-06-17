@@ -58,13 +58,14 @@ Same memory layer for Claude Code, Cursor, Aider, custom MCP clients. Mnemo beco
 - ✅ Per-agent attribution (`agent` field, `remember --agent`, `recall --agent`, `mnemo agents`)
 - ✅ Reasoning across agent traces via `byAgent` stats and agent-scoped recall
 
-### v2.4 — Plug-in framework
+### v2.4 — Plug-in framework ✅ (shipped 2.5.0)
 
 Custom embedders, custom rankers, custom capture rules. Other devs build on top.
 
-- `@mnemo-mcp/plugin-*` convention
-- Plugin discovery via package.json `mnemo` key
-- API surface for ranker / embedder / hook / capture-rule plugins
+- ✅ `@mnemo-mcp/plugin-*` / `mnemo-plugin-*` convention
+- ✅ Plugin discovery via package.json `mnemo` key (`discoverPlugins`)
+- ✅ API surface for ranker / embedder / hook / capture-rule plugins (`MnemoPlugin`)
+- ✅ `mnemo plugins` lists what's loaded; opt-out via `MNEMO_NO_PLUGINS=1`
 
 ### v2.5 — Hosted optional sync + web UI
 

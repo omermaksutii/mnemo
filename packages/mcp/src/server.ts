@@ -1,6 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { Mnemo, projectHashOf } from '@mnemo-mcp/core';
+import { Mnemo, projectHashOf, discoverPlugins } from '@mnemo-mcp/core';
 
 export type CreateServerOpts = {
   dataDir?: string;
@@ -13,12 +13,13 @@ export async function createServer(opts: CreateServerOpts = {}): Promise<{ serve
   const embedderType: 'onnx' | 'hash' =
     opts.embedderType ?? (process.env.MNEMO_EMBEDDER === 'hash' ? 'hash' : 'onnx');
   const defaultAgent = opts.agent ?? process.env.MNEMO_AGENT ?? 'claude-code';
-  const mnemo = await Mnemo.open({ dataDir: opts.dataDir, embedderType, defaultAgent });
+  const plugins = process.env.MNEMO_NO_PLUGINS === '1' ? [] : await discoverPlugins({ cwd: process.cwd() });
+  const mnemo = await Mnemo.open({ dataDir: opts.dataDir, embedderType, defaultAgent, plugins });
 
   const server = new McpServer(
     {
       name: 'mnemo',
-      version: '2.4.0',
+      version: '2.5.0',
     },
     {
       // Standard MCP discovery: any MCP-aware client can read these instructions

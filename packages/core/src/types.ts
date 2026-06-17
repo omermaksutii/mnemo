@@ -227,4 +227,6 @@ export type MnemoOpts = {
   encryptionKey?: string;
   /** Default agent attribution for captures (e.g. 'claude-code'). Falls back to $MNEMO_AGENT. */
   defaultAgent?: string;
+  /** Pre-loaded plugins (custom embedder/ranker). Discover with `discoverPlugins`. */
+  plugins?: import('./plugin.js').MnemoPlugin[];
 };

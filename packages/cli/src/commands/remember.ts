@@ -1,7 +1,8 @@
 import type { Command } from 'commander';
-import { Mnemo, projectHashOf, expiresAtFromTtl, CHANNELS, SecretContentError, type MemoryChannel } from '@mnemo-mcp/core';
+import { projectHashOf, expiresAtFromTtl, CHANNELS, SecretContentError, type MemoryChannel } from '@mnemo-mcp/core';
 import chalk from 'chalk';
 import { writeJsonResult } from '../json-mode.js';
+import { openEngine } from '../engine.js';
 
 type Opts = {
   global: boolean;
@@ -31,7 +32,6 @@ export function registerRemember(program: Command): void {
     .action(async (contentParts: string[], opts: Opts) => {
       const content = contentParts.join(' ');
       const tags = opts.tags ? opts.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
-      const embedderType = (process.env.MNEMO_EMBEDDER === 'hash' ? 'hash' : 'onnx') as 'hash' | 'onnx';
 
       if (opts.channel && !(CHANNELS as readonly string[]).includes(opts.channel)) {
         console.error(chalk.red(`invalid channel: ${opts.channel}. Valid: ${CHANNELS.join(', ')}`));
@@ -39,7 +39,7 @@ export function registerRemember(program: Command): void {
         return;
       }
 
-      const m = await Mnemo.open({ dataDir: opts.dataDir, embedderType });
+      const m = await openEngine({ dataDir: opts.dataDir });
       try {
         const expiresAt = expiresAtFromTtl(opts.expiresIn);
         if (opts.expiresIn && expiresAt === null) {
