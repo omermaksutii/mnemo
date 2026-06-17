@@ -27,6 +27,7 @@ import { registerServe } from './commands/serve.js';
 import { registerEntity } from './commands/entity.js';
 import { registerAgents } from './commands/agents.js';
 import { registerPlugins } from './commands/plugins.js';
+import { registerSync } from './commands/sync.js';
 
 // Set JSON mode before commander parses anything — the hook-based
 // approach is unreliable when --json sits between the program name and
@@ -41,7 +42,7 @@ const program = new Command();
 program
   .name('mnemo')
   .description('Persistent memory for Claude Code')
-  .version("2.5.0");
+  .version("2.6.0");
 
 registerRemember(program);
 registerRecall(program);
@@ -71,6 +72,7 @@ registerServe(program);
 registerEntity(program);
 registerAgents(program);
 registerPlugins(program);
+registerSync(program);
 
 program.parseAsync(process.argv).catch(err => {
   console.error('mnemo:', err.message);

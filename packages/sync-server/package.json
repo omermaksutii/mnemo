@@ -1,45 +1,39 @@
 {
-  "name": "@mnemo-mcp/cli",
+  "name": "@mnemo-mcp/sync-server",
   "version": "2.6.0",
-  "description": "Mnemo CLI — install Mnemo into Claude Code, capture and recall memories from your terminal",
+  "description": "Mnemo sync server — self-hostable, end-to-end-encrypted blob backend for multi-machine memory sync",
   "license": "MIT",
   "author": "Omer Maksuti",
   "homepage": "https://github.com/omermaksutii/mnemo#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/omermaksutii/mnemo.git",
-    "directory": "packages/cli"
+    "directory": "packages/sync-server"
   },
   "bugs": {
     "url": "https://github.com/omermaksutii/mnemo/issues"
   },
   "keywords": [
     "mnemo",
-    "memory",
+    "sync",
+    "end-to-end-encryption",
+    "self-hosted",
     "claude-code",
-    "cli",
-    "anthropic",
-    "mcp"
+    "memory"
   ],
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "mnemo": "./bin/mnemo.js"
+    "mnemo-sync-server": "./bin/mnemo-sync-server.js"
   },
   "files": [
     "dist",
-    "bin",
-    "assets"
+    "bin"
   ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run"
-  },
-  "dependencies": {
-    "@mnemo-mcp/core": "2.6.0",
-    "commander": "^12.0.0",
-    "chalk": "^5.3.0"
   },
   "publishConfig": {
     "access": "public"

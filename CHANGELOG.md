@@ -1,5 +1,17 @@
 # Changelog
 
+## 2.6.0 — 2026-06-17
+
+Optional hosted sync + web UI (roadmap v2.5). Local-first stays the default; sync is purely opt-in.
+
+### Added
+- **`@mnemo-mcp/sync-server`** — a new, self-hostable, dependency-light blob backend (`mnemo-sync-server`). Stores one opaque ciphertext blob per namespace; bearer-token auth; `/v1/health` + `/v1/blobs/:namespace` (GET/PUT/HEAD/DELETE). This is the open-source backend mnemo.dev would run.
+- **`mnemo sync push|pull|status`** — end-to-end-encrypted multi-machine sync. Memories are encrypted locally with your key (`MNEMO_ENCRYPTION_KEY`) before upload, so the server only ever stores ciphertext — it cannot read your memories.
+- The `mnemo serve` localhost dashboard (shipped in 2.1.0) is the web UI for this milestone.
+
+### Notes
+- The hosted mnemo.dev service is a deployment of `@mnemo-mcp/sync-server`; the server, the E2E encryption, and the client are all in this repo and run anywhere.
+
 ## 2.5.0 — 2026-06-17
 
 Plug-in framework (roadmap v2.4). Other developers extend Mnemo.

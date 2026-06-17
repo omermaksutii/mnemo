@@ -19,7 +19,7 @@ export async function createServer(opts: CreateServerOpts = {}): Promise<{ serve
   const server = new McpServer(
     {
       name: 'mnemo',
-      version: '2.5.0',
+      version: '2.6.0',
     },
     {
       // Standard MCP discovery: any MCP-aware client can read these instructions

@@ -67,14 +67,15 @@ Custom embedders, custom rankers, custom capture rules. Other devs build on top.
 - ✅ API surface for ranker / embedder / hook / capture-rule plugins (`MnemoPlugin`)
 - ✅ `mnemo plugins` lists what's loaded; opt-out via `MNEMO_NO_PLUGINS=1`
 
-### v2.5 — Hosted optional sync + web UI
+### v2.5 — Hosted optional sync + web UI ✅ (shipped 2.6.0)
 
 For users who want multi-machine sync without git.
 
-- `mnemo.dev` hosted backend (open-source server too)
-- Web dashboard at `mnemo.dev/<your-handle>`
-- End-to-end encryption (server can't read content)
-- Free tier, paid for teams
+- ✅ Open-source, self-hostable backend `@mnemo-mcp/sync-server` (this is what a `mnemo.dev` deployment runs)
+- ✅ Web dashboard via `mnemo serve` (localhost)
+- ✅ End-to-end encryption — client encrypts before upload; the server only ever stores ciphertext
+- ✅ `mnemo sync push|pull|status` client
+- Hosting/billing (`mnemo.dev`, free/paid tiers) is an operational deployment of the shipped server, not code in this repo
 
 ## Principles (don't break)
 

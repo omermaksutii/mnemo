@@ -1,17 +1,17 @@
 {
   "name": "mnemo-monorepo",
   "private": true,
-  "version": "2.5.0",
+  "version": "2.6.0",
   "description": "Persistent memory for Claude Code",
   "type": "module",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "build": "npm run build -w @mnemo-mcp/core && npm run build -w @mnemo-mcp/server && npm run build -w @mnemo-mcp/cli",
+    "build": "npm run build -w @mnemo-mcp/core && npm run build -w @mnemo-mcp/server && npm run build -w @mnemo-mcp/cli && npm run build -w @mnemo-mcp/sync-server",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "tsc -p packages/core/tsconfig.json --noEmit && tsc -p packages/mcp/tsconfig.json --noEmit && tsc -p packages/cli/tsconfig.json --noEmit",
+    "lint": "tsc -p packages/core/tsconfig.json --noEmit && tsc -p packages/mcp/tsconfig.json --noEmit && tsc -p packages/cli/tsconfig.json --noEmit && tsc -p packages/sync-server/tsconfig.json --noEmit",
     "clean": "rm -rf packages/*/dist"
   },
   "devDependencies": {
