@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.4.0 — 2026-06-17
+
+Cross-agent memory (roadmap v2.3). One memory layer shared across agents.
+
+### Added
+- **Per-agent attribution** — memories carry an `agent` field (new column, auto-migrated). Set via `MnemoOpts.defaultAgent`, `$MNEMO_AGENT`, `remember --agent`, or the MCP `agent` arg.
+- `recall --agent` / `recall({ agent })` and `list({ agent })` filter by capturing agent.
+- `mnemo agents` — attribution view with per-agent counts and unattributed total. `MnemoStats.byAgent`.
+- **Standard MCP discovery** — the server now ships `instructions` so any MCP-aware client (Cursor, Aider, custom) can use Mnemo without bespoke wiring. MCP `mnemo_remember`/`mnemo_recall` accept an `agent` arg; the server defaults attribution to `claude-code` (override with `$MNEMO_AGENT`).
+- MCP recall now applies an anti-pattern boost so prior failures surface across agents.
+
 ## 2.3.0 — 2026-06-17
 
 Self-reflective learning (roadmap v2.2). Mnemo learns from its own failures.

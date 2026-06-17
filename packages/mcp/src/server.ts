@@ -5,17 +5,32 @@ import { Mnemo, projectHashOf } from '@mnemo-mcp/core';
 export type CreateServerOpts = {
   dataDir?: string;
   embedderType?: 'onnx' | 'hash';
+  /** Default agent attribution for captures via this server. Falls back to $MNEMO_AGENT. */
+  agent?: string;
 };
 
 export async function createServer(opts: CreateServerOpts = {}): Promise<{ server: McpServer; close: () => Promise<void> }> {
   const embedderType: 'onnx' | 'hash' =
     opts.embedderType ?? (process.env.MNEMO_EMBEDDER === 'hash' ? 'hash' : 'onnx');
-  const mnemo = await Mnemo.open({ dataDir: opts.dataDir, embedderType });
+  const defaultAgent = opts.agent ?? process.env.MNEMO_AGENT ?? 'claude-code';
+  const mnemo = await Mnemo.open({ dataDir: opts.dataDir, embedderType, defaultAgent });
 
-  const server = new McpServer({
-    name: 'mnemo',
-    version: '0.2.0',
-  });
+  const server = new McpServer(
+    {
+      name: 'mnemo',
+      version: '2.4.0',
+    },
+    {
+      // Standard MCP discovery: any MCP-aware client can read these instructions
+      // to understand the memory layer without bespoke wiring (cross-agent, v2.3).
+      instructions:
+        'Mnemo is a shared persistent memory layer. Use mnemo_recall before tasks to ' +
+        'retrieve prior decisions, conventions, and gotchas; use mnemo_remember to persist ' +
+        'durable facts. Memories are attributed per agent so multiple tools (Claude Code, ' +
+        'Cursor, Aider) can share one store. mnemo_entity_context and mnemo_what_depends_on ' +
+        'expose the knowledge graph.',
+    },
+  );
 
   server.tool(
     'mnemo_recall',
@@ -26,6 +41,7 @@ export async function createServer(opts: CreateServerOpts = {}): Promise<{ serve
       scope: z.enum(['project', 'global', 'all']).optional().describe('Memory scope filter (default: all)'),
       project_hash: z.string().optional().describe('Project hash; defaults to hash of cwd when scope=project'),
       min_score: z.number().min(0).max(1).optional().describe('Minimum composite score (default 0)'),
+      agent: z.string().optional().describe('Only memories captured by this agent'),
     },
     async args => {
       const projectHash = args.scope === 'project' ? args.project_hash ?? projectHashOf(process.cwd()) : undefined;
@@ -34,6 +50,8 @@ export async function createServer(opts: CreateServerOpts = {}): Promise<{ serve
         scope: args.scope,
         projectHash,
         minScore: args.min_score ?? 0,
+        agent: args.agent,
+        antiPatternBoost: 0.15,
       });
       if (hits.length === 0) {
         return { content: [{ type: 'text', text: 'no matching memories' }] };
@@ -54,6 +72,7 @@ export async function createServer(opts: CreateServerOpts = {}): Promise<{ serve
       scope: z.enum(['project', 'global']).optional().describe('Scope (default: project)'),
       tags: z.array(z.string()).optional().describe('Optional tags'),
       project_hash: z.string().optional().describe('Project hash; defaults to hash of cwd'),
+      agent: z.string().optional().describe(`Capturing agent (default: ${defaultAgent})`),
     },
     async args => {
       const scope = args.scope ?? 'project';
@@ -64,6 +83,7 @@ export async function createServer(opts: CreateServerOpts = {}): Promise<{ serve
         projectHash,
         tags: args.tags ?? [],
         source: 'manual',
+        agent: args.agent,
       });
       return { content: [{ type: 'text', text: `saved ${rec.id.slice(0, 8)} (${scope})` }] };
     },

@@ -50,13 +50,13 @@ Observe Claude's own mistakes (failed tests, reverted commits, error stack trace
 - ✅ Anti-pattern channel auto-populated from these observations (opt-out `MNEMO_REFLECT=0`)
 - ✅ `mnemo recall` boosts anti-pattern hits via `antiPatternBoost`; pre-task hook surfaces them as "⚠ Watch out"
 
-### v2.3 — Cross-agent memory
+### v2.3 — Cross-agent memory ✅ (shipped 2.4.0)
 
 Same memory layer for Claude Code, Cursor, Aider, custom MCP clients. Mnemo becomes infrastructure.
 
-- Standard MCP discovery so any MCP-aware agent can use it
-- Per-agent attribution (which agent captured what, which agent recalled it)
-- Reasoning across agent traces
+- ✅ Standard MCP discovery — server ships `instructions` so any MCP-aware agent can use it
+- ✅ Per-agent attribution (`agent` field, `remember --agent`, `recall --agent`, `mnemo agents`)
+- ✅ Reasoning across agent traces via `byAgent` stats and agent-scoped recall
 
 ### v2.4 — Plug-in framework
 

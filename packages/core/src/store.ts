@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS memories (
   last_accessed_at INTEGER NOT NULL,
   expires_at INTEGER,
   channel TEXT,
-  metadata TEXT
+  metadata TEXT,
+  agent TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_scope_project ON memories(scope, project_hash);
 CREATE INDEX IF NOT EXISTS idx_updated ON memories(updated_at);
@@ -62,6 +63,7 @@ export type StoreCounts = {
   total: number;
   byScope: Record<MemoryScope, number>;
   byChannel: Record<string, number>;
+  byAgent: Record<string, number>;
   expired: number;
   neverRecalled: number;
 };
@@ -71,6 +73,7 @@ export type StoreListFilter = {
   projectHash?: string | null;
   source?: MemorySource | MemorySource[];
   channel?: MemoryChannel | MemoryChannel[];
+  agent?: string;
   tags?: string[];
   limit?: number;
   since?: number;
@@ -146,6 +149,7 @@ export class Store {
     try { db.exec('ALTER TABLE memories ADD COLUMN expires_at INTEGER'); } catch {}
     try { db.exec('ALTER TABLE memories ADD COLUMN channel TEXT'); } catch {}
     try { db.exec('ALTER TABLE memories ADD COLUMN metadata TEXT'); } catch {}
+    try { db.exec('ALTER TABLE memories ADD COLUMN agent TEXT'); } catch {}
     const store = new Store(db, path, encryptionKey);
     if (isFresh) await store.flush();
     return store;
@@ -154,8 +158,8 @@ export class Store {
   async upsert(rec: MemoryRecord): Promise<void> {
     this.db.run(
       `INSERT INTO memories
-       (id, scope, project_hash, source, content, tags, created_at, updated_at, access_count, last_accessed_at, expires_at, channel, metadata)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       (id, scope, project_hash, source, content, tags, created_at, updated_at, access_count, last_accessed_at, expires_at, channel, metadata, agent)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(id) DO UPDATE SET
          scope=excluded.scope,
          project_hash=excluded.project_hash,
@@ -165,7 +169,8 @@ export class Store {
          updated_at=excluded.updated_at,
          expires_at=excluded.expires_at,
          channel=excluded.channel,
-         metadata=excluded.metadata`,
+         metadata=excluded.metadata,
+         agent=excluded.agent`,
       [
         rec.id,
         rec.scope,
@@ -180,6 +185,7 @@ export class Store {
         rec.expiresAt,
         rec.channel,
         rec.metadata == null ? null : JSON.stringify(rec.metadata),
+        rec.agent ?? null,
       ],
     );
     await this.flush();
@@ -197,6 +203,7 @@ export class Store {
       expiresAt: fields.expiresAt !== undefined ? fields.expiresAt : existing.expiresAt,
       channel: fields.channel !== undefined ? fields.channel : existing.channel,
       metadata: fields.metadata !== undefined ? fields.metadata : existing.metadata,
+      agent: fields.agent !== undefined ? fields.agent : existing.agent,
       updatedAt: Date.now(),
     };
     await this.upsert(next);
@@ -249,6 +256,10 @@ export class Store {
       where.push(`channel IN (${chans.map(() => '?').join(',')})`);
       args.push(...chans);
     }
+    if (filter.agent) {
+      where.push('agent = ?');
+      args.push(filter.agent);
+    }
     if (!filter.includeExpired) {
       where.push('(expires_at IS NULL OR expires_at > ?)');
       args.push(Date.now());
@@ -292,7 +303,14 @@ export class Store {
     let neverRecalled = 0;
     if (ncStmt.step()) neverRecalled = Number((ncStmt.getAsObject() as { n: number }).n);
     ncStmt.free();
-    return { total, byScope, byChannel, expired, neverRecalled };
+    const agentStmt = this.db.prepare('SELECT agent, COUNT(*) as n FROM memories WHERE agent IS NOT NULL GROUP BY agent');
+    const byAgent: Record<string, number> = {};
+    while (agentStmt.step()) {
+      const row = agentStmt.getAsObject() as { agent: string; n: number };
+      byAgent[row.agent] = Number(row.n);
+    }
+    agentStmt.free();
+    return { total, byScope, byChannel, byAgent, expired, neverRecalled };
   }
 
   async bumpAccess(id: string): Promise<void> {
@@ -456,6 +474,7 @@ export class Store {
       expiresAt: row.expires_at == null ? null : Number(row.expires_at),
       channel: (row.channel as MemoryChannel | null) ?? null,
       metadata: row.metadata == null ? null : JSON.parse(String(row.metadata)),
+      agent: (row.agent as string | null) ?? null,
     };
   }
 }

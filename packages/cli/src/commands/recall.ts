@@ -13,6 +13,7 @@ type Opts = {
   source?: string;
   channel?: string;
   since?: string;
+  agent?: string;
   includeExpired: boolean;
   interactive: boolean;
   explain: boolean;
@@ -33,6 +34,7 @@ export function registerRecall(program: Command): void {
     .option('--source <sources>', `Comma-separated sources (${SOURCES.join('|')})`)
     .option('-c, --channel <channels>', `Comma-separated channels (${CHANNELS.join('|')})`)
     .option('--since <duration>', 'Only memories updated within (e.g. 7d)')
+    .option('--agent <name>', 'Only memories captured by this agent')
     .option('--include-expired', 'Include expired memories', false)
     .option('-i, --interactive', 'Interactive picker (arrow keys + Enter)', false)
     .option('--explain', 'Show ranking breakdown (sim/recency/access) per hit', false)
@@ -61,6 +63,7 @@ export function registerRecall(program: Command): void {
           source,
           channel,
           since,
+          agent: opts.agent,
           includeExpired: opts.includeExpired,
         });
 

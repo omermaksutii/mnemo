@@ -39,6 +39,8 @@ export type MemoryRecord = {
   channel: MemoryChannel | null;
   /** Free-form JSON metadata. Used by procedures (steps, run counts) and future v2 features. */
   metadata: Record<string, unknown> | null;
+  /** Which agent captured this memory (e.g. 'claude-code', 'cursor', 'aider'). Cross-agent memory, v2.3. */
+  agent: string | null;
 };
 
 /** Procedural memory: a named workflow Claude can follow step-by-step. */
@@ -78,6 +80,8 @@ export type CaptureInput = {
   allowSensitive?: boolean;
   /** Pre-supplied id (used when importing/team-sync to preserve identity). */
   id?: string;
+  /** Attribute this capture to a named agent. Falls back to the engine's default agent. */
+  agent?: string | null;
 };
 
 export type RecallOpts = {
@@ -93,6 +97,8 @@ export type RecallOpts = {
   channel?: MemoryChannel | MemoryChannel[];
   /** Only consider memories with `updatedAt >= since` (unix ms). */
   since?: number;
+  /** Filter results to memories captured by this agent (cross-agent memory, v2.3). */
+  agent?: string;
   /** Include expired memories in results. Default false. */
   includeExpired?: boolean;
   /** Attach linked entities to each hit (knowledge graph, v2.1). */
@@ -119,6 +125,7 @@ export type ListFilter = {
   tags?: string[];
   source?: MemorySource | MemorySource[];
   channel?: MemoryChannel | MemoryChannel[];
+  agent?: string;
   limit?: number;
   since?: number;
   includeExpired?: boolean;
@@ -132,6 +139,7 @@ export type UpdateInput = {
   expiresAt?: number | null;
   channel?: MemoryChannel | null;
   metadata?: Record<string, unknown> | null;
+  agent?: string | null;
 };
 
 export type PruneOpts = {
@@ -157,6 +165,7 @@ export type MnemoStats = {
   totalMemories: number;
   byScope: Record<MemoryScope, number>;
   byChannel: Record<string, number>;
+  byAgent: Record<string, number>;
   indexSize: number;
   embeddingDimension: number;
   storageBytes: number;
@@ -216,4 +225,6 @@ export type MnemoOpts = {
   embedderType?: 'onnx' | 'hash';
   /** Passphrase for encryption-at-rest. Falls back to $MNEMO_ENCRYPTION_KEY. */
   encryptionKey?: string;
+  /** Default agent attribution for captures (e.g. 'claude-code'). Falls back to $MNEMO_AGENT. */
+  defaultAgent?: string;
 };

@@ -45,6 +45,7 @@ export class Mnemo {
     private index: VectorIndex,
     private embedder: Embedder,
     private dataDir: string,
+    private defaultAgent: string | null,
   ) {}
 
   static async open(opts: MnemoOpts = {}): Promise<Mnemo> {
@@ -77,7 +78,8 @@ export class Mnemo {
       await index.save();
     }
 
-    return new Mnemo(store, index, embedder, dataDir);
+    const defaultAgent = opts.defaultAgent ?? process.env.MNEMO_AGENT ?? null;
+    return new Mnemo(store, index, embedder, dataDir, defaultAgent);
   }
 
   /** True when the most recent `capture()` updated an existing memory instead of inserting a new one. */
@@ -133,6 +135,7 @@ export class Mnemo {
       expiresAt: input.expiresAt ?? null,
       channel: input.channel ?? null,
       metadata: input.metadata ?? null,
+      agent: input.agent !== undefined ? input.agent : this.defaultAgent,
     };
     await this.store.upsert(rec);
     await this.index.add(rec.id, v);
@@ -161,6 +164,7 @@ export class Mnemo {
       if (since && rec.updatedAt < since) continue;
       if (sources && !sources.includes(rec.source)) continue;
       if (channels && (!rec.channel || !channels.includes(rec.channel))) continue;
+      if (opts.agent && rec.agent !== opts.agent) continue;
       if (requiredTags.length && !requiredTags.every(t => rec.tags.includes(t))) continue;
       let s = score(cand.similarity, rec);
       if (opts.antiPatternBoost && rec.channel === 'anti-pattern') s += opts.antiPatternBoost;
@@ -211,6 +215,7 @@ export class Mnemo {
       totalMemories: counts.total,
       byScope: counts.byScope,
       byChannel: counts.byChannel,
+      byAgent: counts.byAgent,
       indexSize: this.index.size(),
       embeddingDimension: this.embedder.dimension,
       storageBytes,

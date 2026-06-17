@@ -11,6 +11,7 @@ type Opts = {
   expiresIn?: string;
   dedupThreshold: string;
   allowSensitive: boolean;
+  agent?: string;
   dataDir?: string;
 };
 
@@ -25,6 +26,7 @@ export function registerRemember(program: Command): void {
     .option('--expires-in <duration>', 'Auto-forget after (e.g. 30d, 12h, 7d)')
     .option('--dedup-threshold <n>', 'Cosine similarity above which to update existing instead of inserting (0 disables)', '0.95')
     .option('--allow-sensitive', 'Bypass the secret-guard (use with care)', false)
+    .option('--agent <name>', 'Attribute this capture to a named agent (default: $MNEMO_AGENT)')
     .option('--data-dir <path>', 'Data directory override')
     .action(async (contentParts: string[], opts: Opts) => {
       const content = contentParts.join(' ');
@@ -57,6 +59,7 @@ export function registerRemember(program: Command): void {
             expiresAt,
             dedupThreshold: Number(opts.dedupThreshold),
             allowSensitive: opts.allowSensitive,
+            agent: opts.agent,
           });
           if (writeJsonResult({ id: rec.id, scope: rec.scope, channel: rec.channel, deduped: m.lastCaptureDeduped })) return;
           const verb = m.lastCaptureDeduped ? chalk.cyan('updated') : chalk.green('saved');
