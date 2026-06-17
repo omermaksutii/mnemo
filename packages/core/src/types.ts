@@ -97,6 +97,12 @@ export type RecallOpts = {
   includeExpired?: boolean;
   /** Attach linked entities to each hit (knowledge graph, v2.1). */
   includeEntities?: boolean;
+  /**
+   * Additive score bonus applied to `anti-pattern` channel hits so past mistakes
+   * surface when you are about to repeat them (self-reflective learning, v2.2).
+   * Default 0 (off). Typical value ~0.1–0.2.
+   */
+  antiPatternBoost?: number;
 };
 
 export type MemoryHit = {

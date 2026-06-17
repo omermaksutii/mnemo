@@ -31,16 +31,24 @@ export async function runPreTask(payload: Payload): Promise<string> {
     }
 
     const hits = await m.recall(description, {
-      k: 3,
+      k: 4,
       scope: 'all',
       minScore: 0.3,
+      // Surface past mistakes ("last time X failed because Y") before similar work.
+      antiPatternBoost: 0.15,
     });
     const relevant = hits.filter(
       h => (h.record.scope === 'global' || h.record.projectHash === projectHash) && h.record.channel !== 'procedure',
     );
     if (relevant.length > 0) {
-      const lines = ['## Relevant memories', ...relevant.map(h => `- ${h.record.content}`)];
-      sections.push(lines.join('\n'));
+      const antiPatterns = relevant.filter(h => h.record.channel === 'anti-pattern');
+      const others = relevant.filter(h => h.record.channel !== 'anti-pattern');
+      if (antiPatterns.length > 0) {
+        sections.push(['## ⚠ Watch out (past failures)', ...antiPatterns.map(h => `- ${h.record.content}`)].join('\n'));
+      }
+      if (others.length > 0) {
+        sections.push(['## Relevant memories', ...others.map(h => `- ${h.record.content}`)].join('\n'));
+      }
     }
     return sections.join('\n\n');
   } finally {

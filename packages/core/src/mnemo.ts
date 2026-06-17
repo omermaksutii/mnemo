@@ -162,7 +162,8 @@ export class Mnemo {
       if (sources && !sources.includes(rec.source)) continue;
       if (channels && (!rec.channel || !channels.includes(rec.channel))) continue;
       if (requiredTags.length && !requiredTags.every(t => rec.tags.includes(t))) continue;
-      const s = score(cand.similarity, rec);
+      let s = score(cand.similarity, rec);
+      if (opts.antiPatternBoost && rec.channel === 'anti-pattern') s += opts.antiPatternBoost;
       if (s < minScore) continue;
       out.push({ record: rec, score: s, similarity: cand.similarity });
     }

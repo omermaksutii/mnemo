@@ -41,14 +41,14 @@ Entities + relations on top of the existing vector layer. *AuthService* is an en
 - ✅ Graph traversal via BFS for "what depends on X?" (`whatDependsOn`)
 - ✅ MCP tools `mnemo_entity_context`, `mnemo_what_depends_on`
 
-### v2.2 — Self-reflective learning
+### v2.2 — Self-reflective learning ✅ (shipped 2.3.0)
 
 Observe Claude's own mistakes (failed tests, reverted commits, error stack traces) and capture *anti-patterns* automatically.
 
-- New hook: `Stop` — when a session ends with errors, capture what was attempted vs. what failed
-- New hook: `SubagentStop` — capture lessons from spawned agents
-- Anti-pattern channel auto-populated from these observations
-- `mnemo recall` boosts anti-pattern hits when about to do something similar ("Last 3 attempts to do X failed because Y — try Z instead")
+- ✅ New hook: `Stop` — captures detected failures as an anti-pattern memory
+- ✅ New hook: `SubagentStop` — same, tagged `subagent`
+- ✅ Anti-pattern channel auto-populated from these observations (opt-out `MNEMO_REFLECT=0`)
+- ✅ `mnemo recall` boosts anti-pattern hits via `antiPatternBoost`; pre-task hook surfaces them as "⚠ Watch out"
 
 ### v2.3 — Cross-agent memory
 

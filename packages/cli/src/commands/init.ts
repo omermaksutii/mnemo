@@ -128,6 +128,20 @@ function hooksPatch(): Record<string, unknown> {
           ],
         },
       ],
+      Stop: [
+        {
+          hooks: [
+            { type: 'command', command: 'npx -y @mnemo-mcp/cli hook stop' },
+          ],
+        },
+      ],
+      SubagentStop: [
+        {
+          hooks: [
+            { type: 'command', command: 'npx -y @mnemo-mcp/cli hook subagent-stop' },
+          ],
+        },
+      ],
     },
   };
 }

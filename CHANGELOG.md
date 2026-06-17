@@ -1,5 +1,16 @@
 # Changelog
 
+## 2.3.0 — 2026-06-17
+
+Self-reflective learning (roadmap v2.2). Mnemo learns from its own failures.
+
+### Added
+- **Stop / SubagentStop hooks** — when a session or spawned agent ends with failures (failed tests, errors, type errors, build failures, reverts), Mnemo captures a single `anti-pattern` memory summarizing what went wrong. Opt-out with `MNEMO_REFLECT=0`; only installed via `init --with-hooks`.
+- Failure detection: `detectFailures(text)` + `summarizeFailures(signals)` in core (`FailureKind`, `FailureSignal`).
+- `recall({ antiPatternBoost })` — additive score bonus that lifts anti-pattern hits so past mistakes surface before similar work.
+- The pre-task hook now boosts anti-patterns and renders them under a `⚠ Watch out (past failures)` heading.
+- `mnemo hook stop|subagent-stop` handlers; `init --with-hooks` wires `Stop` and `SubagentStop`.
+
 ## 2.2.0 — 2026-06-17
 
 Knowledge graph (roadmap v2.1). Entities and relations on top of the vector layer.

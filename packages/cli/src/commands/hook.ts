@@ -3,6 +3,8 @@ import { runSessionStart } from '../hooks/session-start.js';
 import { runPreTask } from '../hooks/pre-task.js';
 import { runPostEdit } from '../hooks/post-edit.js';
 import { runUserPromptSubmit } from '../hooks/user-prompt-submit.js';
+import { runStop } from '../hooks/stop.js';
+import { runSubagentStop } from '../hooks/subagent-stop.js';
 
 type Handler = (payload: Record<string, unknown>) => Promise<string>;
 
@@ -11,6 +13,8 @@ const HANDLERS: Record<string, Handler> = {
   'pre-task': runPreTask as Handler,
   'post-edit': runPostEdit as Handler,
   'user-prompt-submit': runUserPromptSubmit as Handler,
+  'stop': runStop as Handler,
+  'subagent-stop': runSubagentStop as Handler,
 };
 
 async function readStdin(): Promise<Record<string, unknown>> {
@@ -72,6 +76,8 @@ function hookEventNameFor(name: string): string {
     case 'pre-task': return 'PreToolUse';
     case 'post-edit': return 'PostToolUse';
     case 'user-prompt-submit': return 'UserPromptSubmit';
+    case 'stop': return 'Stop';
+    case 'subagent-stop': return 'SubagentStop';
     default: return name;
   }
 }
