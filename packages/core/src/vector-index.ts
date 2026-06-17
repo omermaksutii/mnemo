@@ -108,6 +108,16 @@ export class VectorIndex {
     return this.idToLabel.size;
   }
 
+  /** Drop every point and start a fresh index. Used by `Mnemo.reindex()`. */
+  async reset(): Promise<void> {
+    this.hnsw = new HierarchicalNSW('cosine', this.opts.dimension);
+    this.hnsw.initIndex(this.opts.maxElements, this.opts.m, this.opts.efConstruction);
+    this.hnsw.setEf(Math.max(50, this.opts.m * 4));
+    this.nextLabel = 1;
+    this.idToLabel.clear();
+    this.labelToId.clear();
+  }
+
   async save(): Promise<void> {
     // hnswlib-node has a quirk where a saved-then-reloaded empty index
     // refuses to accept new points ("exceeds the specified limit"). Avoid

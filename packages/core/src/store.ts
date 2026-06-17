@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
 import type { MemoryChannel, MemoryRecord, MemoryScope, MemorySource, UpdateInput } from './types.js';
+import { decryptBytes, encryptBytes, isEncrypted, resolveEncryptionKey } from './crypto.js';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS memories (
@@ -87,14 +88,24 @@ export class Store {
   private constructor(
     private db: Database,
     private path: string,
+    private encryptionKey: string | null,
   ) {}
 
-  static async open(path: string): Promise<Store> {
+  static async open(path: string, opts: { encryptionKey?: string } = {}): Promise<Store> {
     const SQL = (await loadSql()) as unknown as { Database: new (data?: Uint8Array) => Database };
+    const encryptionKey = resolveEncryptionKey(opts.encryptionKey);
     let db: Database;
     let isFresh = false;
     if (existsSync(path)) {
-      const bytes = await readFile(path);
+      let bytes: Uint8Array = await readFile(path);
+      if (isEncrypted(bytes)) {
+        if (!encryptionKey) {
+          throw new Error(
+            'memory.db is encrypted but no MNEMO_ENCRYPTION_KEY is set',
+          );
+        }
+        bytes = decryptBytes(bytes, encryptionKey);
+      }
       db = new SQL.Database(new Uint8Array(bytes));
     } else {
       await mkdir(dirname(path), { recursive: true });
@@ -106,7 +117,7 @@ export class Store {
     try { db.exec('ALTER TABLE memories ADD COLUMN expires_at INTEGER'); } catch {}
     try { db.exec('ALTER TABLE memories ADD COLUMN channel TEXT'); } catch {}
     try { db.exec('ALTER TABLE memories ADD COLUMN metadata TEXT'); } catch {}
-    const store = new Store(db, path);
+    const store = new Store(db, path, encryptionKey);
     if (isFresh) await store.flush();
     return store;
   }
@@ -266,7 +277,15 @@ export class Store {
 
   async flush(): Promise<void> {
     const data = this.db.export();
-    await writeFile(this.path, Buffer.from(data));
+    const payload = this.encryptionKey
+      ? encryptBytes(data, this.encryptionKey)
+      : Buffer.from(data);
+    await writeFile(this.path, payload);
+  }
+
+  /** Whether this store is persisting an encrypted envelope. */
+  get encrypted(): boolean {
+    return this.encryptionKey !== null;
   }
 
   close(): void {

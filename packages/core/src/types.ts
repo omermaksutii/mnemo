@@ -157,4 +157,6 @@ export type MnemoStats = {
 export type MnemoOpts = {
   dataDir?: string;
   embedderType?: 'onnx' | 'hash';
+  /** Passphrase for encryption-at-rest. Falls back to $MNEMO_ENCRYPTION_KEY. */
+  encryptionKey?: string;
 };

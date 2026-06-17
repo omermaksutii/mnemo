@@ -19,6 +19,11 @@ import { registerDead } from './commands/dead.js';
 import { registerTeam } from './commands/team.js';
 import { registerCompletion } from './commands/completion.js';
 import { registerProcedure } from './commands/procedure.js';
+import { registerBackup } from './commands/backup.js';
+import { registerRestore } from './commands/restore.js';
+import { registerMigrate } from './commands/migrate.js';
+import { registerWatch } from './commands/watch.js';
+import { registerServe } from './commands/serve.js';
 
 // Set JSON mode before commander parses anything — the hook-based
 // approach is unreliable when --json sits between the program name and
@@ -33,7 +38,7 @@ const program = new Command();
 program
   .name('mnemo')
   .description('Persistent memory for Claude Code')
-  .version("2.0.0");
+  .version("2.1.0");
 
 registerRemember(program);
 registerRecall(program);
@@ -55,6 +60,11 @@ registerDead(program);
 registerTeam(program);
 registerCompletion(program);
 registerProcedure(program);
+registerBackup(program);
+registerRestore(program);
+registerMigrate(program);
+registerWatch(program);
+registerServe(program);
 
 program.parseAsync(process.argv).catch(err => {
   console.error('mnemo:', err.message);

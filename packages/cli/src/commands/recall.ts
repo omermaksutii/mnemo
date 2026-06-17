@@ -1,7 +1,7 @@
 import type { Command } from 'commander';
 import { Mnemo, projectHashOf, sinceFromAgo, CHANNELS, type MemorySource, type MemoryChannel } from '@mnemo-mcp/core';
 import chalk from 'chalk';
-import { formatHit } from '../output.js';
+import { formatHit, formatExplain } from '../output.js';
 import { interactiveRecall } from '../interactive.js';
 import { writeJsonResult } from '../json-mode.js';
 
@@ -15,6 +15,8 @@ type Opts = {
   since?: string;
   includeExpired: boolean;
   interactive: boolean;
+  explain: boolean;
+  stream: boolean;
   dataDir?: string;
 };
 
@@ -33,6 +35,8 @@ export function registerRecall(program: Command): void {
     .option('--since <duration>', 'Only memories updated within (e.g. 7d)')
     .option('--include-expired', 'Include expired memories', false)
     .option('-i, --interactive', 'Interactive picker (arrow keys + Enter)', false)
+    .option('--explain', 'Show ranking breakdown (sim/recency/access) per hit', false)
+    .option('--stream', 'Stream results as newline-delimited JSON (implies --json)', false)
     .option('--data-dir <path>', 'Data directory override')
     .action(async (queryParts: string[], opts: Opts) => {
       const query = queryParts.join(' ');
@@ -60,7 +64,7 @@ export function registerRecall(program: Command): void {
           includeExpired: opts.includeExpired,
         });
 
-        if (writeJsonResult(hits.map(h => ({
+        const toJson = (h: typeof hits[number]) => ({
           id: h.record.id,
           score: h.score,
           similarity: h.similarity,
@@ -68,7 +72,16 @@ export function registerRecall(program: Command): void {
           scope: h.record.scope,
           channel: h.record.channel,
           tags: h.record.tags,
-        })))) return;
+          ...(opts.explain ? { breakdown: m.scoreBreakdown(h.similarity, h.record) } : {}),
+        });
+
+        // Streaming: emit one JSON object per line, for large/piped result sets.
+        if (opts.stream) {
+          for (const h of hits) process.stdout.write(JSON.stringify(toJson(h)) + '\n');
+          return;
+        }
+
+        if (writeJsonResult(hits.map(toJson))) return;
 
         if (hits.length === 0) {
           console.log(chalk.yellow('no matching memories'));
@@ -85,7 +98,10 @@ export function registerRecall(program: Command): void {
           return;
         }
 
-        for (const h of hits) console.log(formatHit(h));
+        for (const h of hits) {
+          console.log(formatHit(h));
+          if (opts.explain) console.log(formatExplain(m.scoreBreakdown(h.similarity, h.record)));
+        }
       } finally {
         await m.close();
       }

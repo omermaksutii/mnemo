@@ -5,19 +5,7 @@
 - ✅ **v1.0** — core engine (ONNX + HNSW + sql.js), CLI, MCP server, hooks, skill, `mnemo init`
 - ✅ **v1.1** — channels, secret-guard, ingest, why, digest, dead, cite, team mode, interactive recall, JSON output, completions
 - ✅ **v1.2** — JSON mode wired into all commands, `procedure` channel scaffolded, doctor + init bug fixes from real-install validation
-
-## Up next
-
-### v1.3 — Quality of life
-
-- `mnemo recall --explain` — show ranking breakdown inline with hits
-- `mnemo recall --json` already works; add streaming output for large result sets
-- `mnemo backup` / `mnemo restore` — first-class wrappers for export/import
-- `mnemo migrate` — handle embedding-dim or schema changes safely
-- Watch mode: `mnemo watch <dir>` — auto-capture changes to matching files
-- Encryption at rest (AES-256-GCM on `.db`)
-- Quantized Int8 embeddings (4× memory savings)
-- Web UI (`mnemo serve` → localhost dashboard)
+- ✅ **v1.3** — `recall --explain`/`--stream`, `backup`/`restore`, `migrate`, `watch`, `serve` (web UI), encryption at rest (AES-256-GCM), Int8 quantization
 
 ## v2.0 — A different level
 

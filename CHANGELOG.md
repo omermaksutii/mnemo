@@ -1,5 +1,20 @@
 # Changelog
 
+## 2.1.0 — 2026-06-17
+
+Quality-of-life release. Everything stays local-first and opt-in.
+
+### Added
+- `mnemo backup [-o file]` / `mnemo restore <file>` — first-class snapshot wrappers over export/import. Backup writes a timestamped envelope; restore reads both the envelope and raw export arrays.
+- `mnemo migrate` — rebuild the vector index from the database after an embedder/dimension change or a corrupted index. Backed by new `Mnemo.reindex()`.
+- `mnemo watch <dir>` — auto-capture changes to matching files (default rules or `--glob`), debounced.
+- `mnemo serve` — zero-dependency localhost web dashboard (search, browse, add, forget) with a small JSON API.
+- `mnemo recall --explain` — inline ranking breakdown (sim×0.7 / recency×0.2 / access×0.1).
+- `mnemo recall --stream` — newline-delimited JSON for large/piped result sets.
+- **Encryption at rest** — set `MNEMO_ENCRYPTION_KEY` (or `MnemoOpts.encryptionKey`) to store `memory.db` as an AES-256-GCM envelope. Plaintext DBs are read transparently, so it's a safe one-way upgrade.
+- **Int8 embedding quantization** utilities (`quantizeInt8`, `dequantizeInt8`, `cosine`, `bytesSaved`) — ~4× memory savings with cosine preserved to >0.999.
+- New core exports: `Mnemo.reindex()`, `encryptBytes`/`decryptBytes`/`isEncrypted`/`resolveEncryptionKey`, quantization helpers, `MnemoOpts.encryptionKey`.
+
 ## 1.1.5 — 2026-05-07
 
 Same feature set as 1.1.0 but with the live-install bugs ironed out.

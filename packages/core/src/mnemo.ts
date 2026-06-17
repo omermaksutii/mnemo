@@ -54,7 +54,7 @@ export class Mnemo {
       embedder = new HashEmbedder({ dimension: 384 });
     }
 
-    const store = await Store.open(p.dbFile);
+    const store = await Store.open(p.dbFile, { encryptionKey: opts.encryptionKey });
     const index = await VectorIndex.open({
       path: p.indexFile,
       dimension: embedder.dimension,
@@ -245,6 +245,22 @@ export class Mnemo {
     const all = await this.store.list({ includeExpired: true });
     const cutoff = opts.olderThanDays ? Date.now() - opts.olderThanDays * 86400_000 : Infinity;
     return all.filter(r => r.accessCount === 0 && r.createdAt < cutoff);
+  }
+
+  /**
+   * Rebuild the vector index from the store, re-embedding every memory with the
+   * current embedder. Used by `mnemo migrate` after an embedder/dimension change
+   * or to repair a corrupted index. Returns the number of memories reindexed.
+   */
+  async reindex(): Promise<number> {
+    await this.index.reset();
+    const all = await this.store.list({ includeExpired: true });
+    for (const rec of all) {
+      const v = await this.embedder.embed(rec.content);
+      await this.index.add(rec.id, v);
+    }
+    await this.index.save();
+    return all.length;
   }
 
   // ---------- procedural memory (v2.0) ----------

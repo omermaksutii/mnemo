@@ -10,6 +10,26 @@ export function formatHit(hit: MemoryHit): string {
   return `${score} ${sim}  ${id}  ${scope}${tags}\n  ${hit.record.content}`;
 }
 
+/** Ranking breakdown line for `recall --explain`. */
+export function formatExplain(breakdown: {
+  similarity: number;
+  recency: number;
+  accessBoost: number;
+  composite: number;
+}): string {
+  const part = (label: string, v: number) => `${chalk.dim(label)} ${v.toFixed(3)}`;
+  return (
+    '  ' +
+    chalk.dim('└─ ') +
+    [
+      part('sim', breakdown.similarity) + chalk.dim('×0.7'),
+      part('recency', breakdown.recency) + chalk.dim('×0.2'),
+      part('access', breakdown.accessBoost) + chalk.dim('×0.1'),
+      chalk.cyan('= ' + breakdown.composite.toFixed(3)),
+    ].join(chalk.dim('  '))
+  );
+}
+
 export function formatRecord(rec: MemoryRecord): string {
   const id = chalk.dim(rec.id.slice(0, 8));
   const scope = rec.scope === 'global' ? chalk.magenta('global') : chalk.green('project');

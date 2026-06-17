@@ -1,4 +1,4 @@
-export const VERSION = '2.0.0';
+export const VERSION = '2.1.0';
 export * from './types.js';
 export { Mnemo, SecretContentError } from './mnemo.js';
 export { HashEmbedder } from './embedder.js';
@@ -16,3 +16,16 @@ export {
   validateProcedureName,
 } from './procedure.js';
 export type { RecordProcedureInput } from './procedure.js';
+export {
+  encryptBytes,
+  decryptBytes,
+  isEncrypted,
+  resolveEncryptionKey,
+} from './crypto.js';
+export {
+  quantizeInt8,
+  dequantizeInt8,
+  cosine,
+  bytesSaved,
+} from './quantize.js';
+export type { QuantizedVector } from './quantize.js';
