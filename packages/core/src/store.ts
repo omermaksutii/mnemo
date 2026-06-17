@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import type { MemoryChannel, MemoryRecord, MemoryScope, MemorySource, UpdateInput } from './types.js';
+import type { Entity, MemoryChannel, MemoryRecord, MemoryScope, MemorySource, Relation, RelationKind, UpdateInput } from './types.js';
 import { decryptBytes, encryptBytes, isEncrypted, resolveEncryptionKey } from './crypto.js';
 
 const SCHEMA = `
@@ -27,6 +27,35 @@ CREATE INDEX IF NOT EXISTS idx_scope_project ON memories(scope, project_hash);
 CREATE INDEX IF NOT EXISTS idx_updated ON memories(updated_at);
 CREATE INDEX IF NOT EXISTS idx_expires ON memories(expires_at);
 CREATE INDEX IF NOT EXISTS idx_channel ON memories(channel);
+
+CREATE TABLE IF NOT EXISTS entities (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  type TEXT,
+  scope TEXT NOT NULL,
+  project_hash TEXT,
+  description TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_entity_name ON entities(scope, project_hash, name);
+
+CREATE TABLE IF NOT EXISTS relations (
+  id TEXT PRIMARY KEY,
+  from_id TEXT NOT NULL,
+  to_id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_rel_from ON relations(from_id);
+CREATE INDEX IF NOT EXISTS idx_rel_to ON relations(to_id);
+
+CREATE TABLE IF NOT EXISTS memory_entities (
+  memory_id TEXT NOT NULL,
+  entity_id TEXT NOT NULL,
+  PRIMARY KEY (memory_id, entity_id)
+);
+CREATE INDEX IF NOT EXISTS idx_me_entity ON memory_entities(entity_id);
 `;
 
 export type StoreCounts = {
@@ -275,6 +304,126 @@ export class Store {
     await this.flush();
   }
 
+  // ---------- knowledge graph (v2.1) ----------
+
+  async upsertEntity(e: Entity): Promise<void> {
+    this.db.run(
+      `INSERT INTO entities (id, name, type, scope, project_hash, description, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         name=excluded.name, type=excluded.type, scope=excluded.scope,
+         project_hash=excluded.project_hash, description=excluded.description,
+         updated_at=excluded.updated_at`,
+      [e.id, e.name, e.type, e.scope, e.projectHash, e.description, e.createdAt, e.updatedAt],
+    );
+    await this.flush();
+  }
+
+  async getEntity(id: string): Promise<Entity | null> {
+    const stmt = this.db.prepare('SELECT * FROM entities WHERE id = ?');
+    stmt.bind([id]);
+    const got = stmt.step() ? entityFromRow(stmt.getAsObject()) : null;
+    stmt.free();
+    return got;
+  }
+
+  async getEntityByName(name: string, scope?: MemoryScope, projectHash?: string | null): Promise<Entity | null> {
+    const where = ['name = ?'];
+    const args: unknown[] = [name];
+    if (scope) { where.push('scope = ?'); args.push(scope); }
+    if (projectHash !== undefined) {
+      if (projectHash === null) where.push('project_hash IS NULL');
+      else { where.push('project_hash = ?'); args.push(projectHash); }
+    }
+    const stmt = this.db.prepare(`SELECT * FROM entities WHERE ${where.join(' AND ')} LIMIT 1`);
+    stmt.bind(args as never);
+    const got = stmt.step() ? entityFromRow(stmt.getAsObject()) : null;
+    stmt.free();
+    return got;
+  }
+
+  async listEntities(filter: { scope?: MemoryScope; projectHash?: string | null; type?: string } = {}): Promise<Entity[]> {
+    const where: string[] = [];
+    const args: unknown[] = [];
+    if (filter.scope) { where.push('scope = ?'); args.push(filter.scope); }
+    if (filter.projectHash !== undefined) {
+      if (filter.projectHash === null) where.push('project_hash IS NULL');
+      else { where.push('project_hash = ?'); args.push(filter.projectHash); }
+    }
+    if (filter.type) { where.push('type = ?'); args.push(filter.type); }
+    const stmt = this.db.prepare(
+      `SELECT * FROM entities ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY name ASC`,
+    );
+    if (args.length) stmt.bind(args as never);
+    const out: Entity[] = [];
+    while (stmt.step()) out.push(entityFromRow(stmt.getAsObject()));
+    stmt.free();
+    return out;
+  }
+
+  async deleteEntity(id: string): Promise<void> {
+    this.db.run('DELETE FROM entities WHERE id = ?', [id]);
+    this.db.run('DELETE FROM relations WHERE from_id = ? OR to_id = ?', [id, id]);
+    this.db.run('DELETE FROM memory_entities WHERE entity_id = ?', [id]);
+    await this.flush();
+  }
+
+  async addRelation(r: Relation): Promise<void> {
+    this.db.run(
+      `INSERT INTO relations (id, from_id, to_id, kind, created_at) VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO NOTHING`,
+      [r.id, r.fromId, r.toId, r.kind, r.createdAt],
+    );
+    await this.flush();
+  }
+
+  async removeRelation(id: string): Promise<void> {
+    this.db.run('DELETE FROM relations WHERE id = ?', [id]);
+    await this.flush();
+  }
+
+  /** Relations touching an entity, in either direction. */
+  async relationsFor(entityId: string): Promise<Relation[]> {
+    const stmt = this.db.prepare('SELECT * FROM relations WHERE from_id = ? OR to_id = ?');
+    stmt.bind([entityId, entityId]);
+    const out: Relation[] = [];
+    while (stmt.step()) out.push(relationFromRow(stmt.getAsObject()));
+    stmt.free();
+    return out;
+  }
+
+  async linkMemoryToEntity(memoryId: string, entityId: string): Promise<void> {
+    this.db.run(
+      'INSERT INTO memory_entities (memory_id, entity_id) VALUES (?, ?) ON CONFLICT DO NOTHING',
+      [memoryId, entityId],
+    );
+    await this.flush();
+  }
+
+  async memoriesForEntity(entityId: string): Promise<MemoryRecord[]> {
+    const stmt = this.db.prepare(
+      `SELECT m.* FROM memories m JOIN memory_entities me ON m.id = me.memory_id
+       WHERE me.entity_id = ? ORDER BY m.updated_at DESC`,
+    );
+    stmt.bind([entityId]);
+    const out: MemoryRecord[] = [];
+    while (stmt.step()) out.push(this.fromRow(stmt.getAsObject()));
+    stmt.free();
+    return out;
+  }
+
+  async entitiesForMemory(memoryId: string): Promise<Entity[]> {
+    const stmt = this.db.prepare(
+      `SELECT e.* FROM entities e JOIN memory_entities me ON e.id = me.entity_id
+       WHERE me.memory_id = ? ORDER BY e.name ASC`,
+    );
+    stmt.bind([memoryId]);
+    const out: Entity[] = [];
+    while (stmt.step()) out.push(entityFromRow(stmt.getAsObject()));
+    stmt.free();
+    return out;
+  }
+
   async flush(): Promise<void> {
     const data = this.db.export();
     const payload = this.encryptionKey
@@ -309,4 +458,27 @@ export class Store {
       metadata: row.metadata == null ? null : JSON.parse(String(row.metadata)),
     };
   }
+}
+
+function entityFromRow(row: Record<string, unknown>): Entity {
+  return {
+    id: String(row.id),
+    name: String(row.name),
+    type: (row.type as string | null) ?? null,
+    scope: row.scope as MemoryScope,
+    projectHash: (row.project_hash as string | null) ?? null,
+    description: (row.description as string | null) ?? null,
+    createdAt: Number(row.created_at),
+    updatedAt: Number(row.updated_at),
+  };
+}
+
+function relationFromRow(row: Record<string, unknown>): Relation {
+  return {
+    id: String(row.id),
+    fromId: String(row.from_id),
+    toId: String(row.to_id),
+    kind: row.kind as RelationKind,
+    createdAt: Number(row.created_at),
+  };
 }

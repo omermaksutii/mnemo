@@ -1,5 +1,18 @@
 # Changelog
 
+## 2.2.0 — 2026-06-17
+
+Knowledge graph (roadmap v2.1). Entities and relations on top of the vector layer.
+
+### Added
+- **Entities** — named things (services, modules, concepts) memories attach to. New `entities`, `relations`, and `memory_entities` tables (auto-created; existing DBs migrate on open).
+- `mnemo entity create|link|attach|list|show|delete` — CLI surface. `show --depends` lists transitive dependents.
+- Relations with kinds `uses | supersedes | contradicts | requires | related`.
+- `Mnemo.createEntity / getEntity / listEntities / deleteEntity / relate / attachMemory / entityContext / whatDependsOn`. `whatDependsOn` is a BFS over incoming `requires`/`uses` edges.
+- `recall({ includeEntities: true })` attaches linked entities to each hit.
+- MCP tools `mnemo_entity_context` and `mnemo_what_depends_on`.
+- New types: `Entity`, `Relation`, `RelationKind`, `EntityContext`, `RELATION_KINDS`.
+
 ## 2.1.0 — 2026-06-17
 
 Quality-of-life release. Everything stays local-first and opt-in.

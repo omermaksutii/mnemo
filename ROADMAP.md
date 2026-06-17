@@ -31,14 +31,15 @@ mnemo remember --channel procedure --global "## Add API endpoint
 - Procedures auto-suggested when starting a new task that matches one ("Looks like you're adding an API endpoint — run `procedure run add-api-endpoint`?")
 - Procedure success/failure tracking — refine based on outcomes
 
-### v2.1 — Knowledge graph
+### v2.1 — Knowledge graph ✅ (shipped 2.2.0)
 
-Entities + relations on top of the existing vector layer. *AuthService* is an entity. Memories link to it. Relations: `uses`, `supersedes`, `contradicts`, `requires`. Query: *"everything we know about AuthService"*.
+Entities + relations on top of the existing vector layer. *AuthService* is an entity. Memories link to it. Relations: `uses`, `supersedes`, `contradicts`, `requires`, `related`. Query: *"everything we know about AuthService"*.
 
-- New table `entities`, new table `relations`
-- `mnemo entity create / link / show`
-- Recall surfaces entity context alongside hits
-- Graph traversal via simple BFS for "what depends on X?"
+- ✅ New tables `entities`, `relations`, `memory_entities`
+- ✅ `mnemo entity create / link / attach / list / show / delete`
+- ✅ Recall surfaces entity context alongside hits (`includeEntities`)
+- ✅ Graph traversal via BFS for "what depends on X?" (`whatDependsOn`)
+- ✅ MCP tools `mnemo_entity_context`, `mnemo_what_depends_on`
 
 ### v2.2 — Self-reflective learning
 

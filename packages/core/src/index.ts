@@ -1,4 +1,4 @@
-export const VERSION = '2.1.0';
+export const VERSION = '2.2.0';
 export * from './types.js';
 export { Mnemo, SecretContentError } from './mnemo.js';
 export { HashEmbedder } from './embedder.js';

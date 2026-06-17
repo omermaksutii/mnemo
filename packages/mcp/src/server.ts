@@ -165,6 +165,42 @@ export async function createServer(opts: CreateServerOpts = {}): Promise<{ serve
     },
   );
 
+  server.tool(
+    'mnemo_entity_context',
+    'Everything known about an entity (a named service/module/concept): its memories and directly-related entities',
+    { name: z.string().describe('Entity name') },
+    async args => {
+      const ctx = await mnemo.entityContext(args.name);
+      if (!ctx) return { content: [{ type: 'text', text: `no entity named "${args.name}"` }] };
+      const lines = [
+        `# ${ctx.entity.name}${ctx.entity.type ? ` (${ctx.entity.type})` : ''}`,
+        ...(ctx.entity.description ? [ctx.entity.description] : []),
+      ];
+      if (ctx.relations.length) {
+        lines.push('', '## relations');
+        for (const r of ctx.relations) {
+          lines.push(`- ${r.direction === 'out' ? '→' : '←'} ${r.relation.kind} ${r.entity.name}`);
+        }
+      }
+      if (ctx.memories.length) {
+        lines.push('', `## memories (${ctx.memories.length})`);
+        for (const mem of ctx.memories) lines.push(`- [${mem.id.slice(0, 8)}] ${mem.content}`);
+      }
+      return { content: [{ type: 'text', text: lines.join('\n') }] };
+    },
+  );
+
+  server.tool(
+    'mnemo_what_depends_on',
+    'Graph traversal: which entities transitively require or use the named entity',
+    { name: z.string().describe('Entity name') },
+    async args => {
+      const deps = await mnemo.whatDependsOn(args.name);
+      if (deps.length === 0) return { content: [{ type: 'text', text: `nothing depends on "${args.name}"` }] };
+      return { content: [{ type: 'text', text: deps.map(d => `- ${d.name}`).join('\n') }] };
+    },
+  );
+
   return {
     server,
     close: async () => {

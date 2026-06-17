@@ -33,6 +33,7 @@ describe('mnemo MCP server', () => {
     const { tools } = await client.listTools();
     const names = tools.map(t => t.name).sort();
     expect(names).toEqual([
+      'mnemo_entity_context',
       'mnemo_forget',
       'mnemo_list',
       'mnemo_procedure_run',
@@ -40,6 +41,7 @@ describe('mnemo MCP server', () => {
       'mnemo_recall',
       'mnemo_remember',
       'mnemo_stats',
+      'mnemo_what_depends_on',
     ]);
   });
 

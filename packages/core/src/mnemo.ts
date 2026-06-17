@@ -6,15 +6,20 @@ import { score } from './ranker.js';
 import { paths, resolveDataDir } from './paths.js';
 import type {
   CaptureInput,
+  Entity,
+  EntityContext,
   ListFilter,
   MemoryHit,
   MemoryRecord,
+  MemoryScope,
   MnemoOpts,
   MnemoStats,
   Procedure,
   PruneOpts,
   PruneResult,
   RecallOpts,
+  Relation,
+  RelationKind,
   UpdateInput,
 } from './types.js';
 import { detectSecrets } from './secret-guard.js';
@@ -164,6 +169,12 @@ export class Mnemo {
     out.sort((a, b) => b.score - a.score);
     const top = out.slice(0, k);
     for (const hit of top) await this.store.bumpAccess(hit.record.id);
+    if (opts.includeEntities) {
+      for (const hit of top) {
+        const entities = await this.store.entitiesForMemory(hit.record.id);
+        if (entities.length) hit.entities = entities;
+      }
+    }
     return top;
   }
 
@@ -261,6 +272,128 @@ export class Mnemo {
     }
     await this.index.save();
     return all.length;
+  }
+
+  // ---------- knowledge graph (v2.1) ----------
+
+  /**
+   * Create or update an entity (a named thing memories attach to). Entities are
+   * unique by (scope, projectHash, name); recording the same name updates it.
+   */
+  async createEntity(input: {
+    name: string;
+    type?: string | null;
+    description?: string | null;
+    scope?: MemoryScope;
+    projectHash?: string | null;
+  }): Promise<Entity> {
+    const scope = input.scope ?? 'project';
+    const projectHash = input.projectHash ?? null;
+    const existing = await this.store.getEntityByName(input.name, scope, projectHash);
+    const now = Date.now();
+    const entity: Entity = {
+      id: existing?.id ?? randomUUID(),
+      name: input.name,
+      type: input.type ?? existing?.type ?? null,
+      scope,
+      projectHash,
+      description: input.description ?? existing?.description ?? null,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    };
+    await this.store.upsertEntity(entity);
+    return entity;
+  }
+
+  /** Look up an entity by name (optionally scoped) or return null. */
+  async getEntity(name: string, scope?: MemoryScope, projectHash?: string | null): Promise<Entity | null> {
+    return this.store.getEntityByName(name, scope, projectHash);
+  }
+
+  async listEntities(filter: { scope?: MemoryScope; projectHash?: string | null; type?: string } = {}): Promise<Entity[]> {
+    return this.store.listEntities(filter);
+  }
+
+  async deleteEntity(name: string, scope?: MemoryScope, projectHash?: string | null): Promise<boolean> {
+    const e = await this.store.getEntityByName(name, scope, projectHash);
+    if (!e) return false;
+    await this.store.deleteEntity(e.id);
+    return true;
+  }
+
+  /**
+   * Create a directed relation `from --kind--> to` between two entities,
+   * auto-creating either entity if it does not exist yet.
+   */
+  async relate(
+    fromName: string,
+    kind: RelationKind,
+    toName: string,
+    opts: { scope?: MemoryScope; projectHash?: string | null } = {},
+  ): Promise<Relation> {
+    const from = await this.createEntity({ name: fromName, scope: opts.scope, projectHash: opts.projectHash });
+    const to = await this.createEntity({ name: toName, scope: opts.scope, projectHash: opts.projectHash });
+    const relation: Relation = {
+      id: randomUUID(),
+      fromId: from.id,
+      toId: to.id,
+      kind,
+      createdAt: Date.now(),
+    };
+    await this.store.addRelation(relation);
+    return relation;
+  }
+
+  /** Attach an existing memory to an entity so recall can surface its context. */
+  async attachMemory(memoryId: string, entityName: string, opts: { scope?: MemoryScope; projectHash?: string | null } = {}): Promise<Entity> {
+    const entity = await this.createEntity({ name: entityName, scope: opts.scope, projectHash: opts.projectHash });
+    await this.store.linkMemoryToEntity(memoryId, entity.id);
+    return entity;
+  }
+
+  /** Everything known about an entity: its memories and directly-related entities. */
+  async entityContext(name: string, scope?: MemoryScope, projectHash?: string | null): Promise<EntityContext | null> {
+    const entity = await this.store.getEntityByName(name, scope, projectHash);
+    if (!entity) return null;
+    const memories = await this.store.memoriesForEntity(entity.id);
+    const rels = await this.store.relationsFor(entity.id);
+    const relations: EntityContext['relations'] = [];
+    for (const r of rels) {
+      const otherId = r.fromId === entity.id ? r.toId : r.fromId;
+      const other = await this.store.getEntity(otherId);
+      if (!other) continue;
+      relations.push({ relation: r, entity: other, direction: r.fromId === entity.id ? 'out' : 'in' });
+    }
+    return { entity, memories, relations };
+  }
+
+  /**
+   * Breadth-first traversal of incoming `requires`/`uses` edges: "what depends
+   * on X?". Returns entities that (transitively) require or use the named one.
+   */
+  async whatDependsOn(name: string, scope?: MemoryScope, projectHash?: string | null): Promise<Entity[]> {
+    const start = await this.store.getEntityByName(name, scope, projectHash);
+    if (!start) return [];
+    const dependsKinds: RelationKind[] = ['requires', 'uses'];
+    const seen = new Set<string>([start.id]);
+    const queue: string[] = [start.id];
+    const out: Entity[] = [];
+    while (queue.length) {
+      const current = queue.shift()!;
+      const rels = await this.store.relationsFor(current);
+      for (const r of rels) {
+        // Incoming edge of a dependency kind: r.fromId depends on r.toId(=current).
+        if (r.toId === current && dependsKinds.includes(r.kind) && !seen.has(r.fromId)) {
+          seen.add(r.fromId);
+          const dep = await this.store.getEntity(r.fromId);
+          if (dep) {
+            out.push(dep);
+            queue.push(dep.id);
+          }
+        }
+      }
+    }
+    return out;
   }
 
   // ---------- procedural memory (v2.0) ----------

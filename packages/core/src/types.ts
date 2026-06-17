@@ -95,12 +95,16 @@ export type RecallOpts = {
   since?: number;
   /** Include expired memories in results. Default false. */
   includeExpired?: boolean;
+  /** Attach linked entities to each hit (knowledge graph, v2.1). */
+  includeEntities?: boolean;
 };
 
 export type MemoryHit = {
   record: MemoryRecord;
   score: number;
   similarity: number;
+  /** Entities linked to this memory, present only when `includeEntities` was set. */
+  entities?: Entity[];
 };
 
 export type ListFilter = {
@@ -152,6 +156,53 @@ export type MnemoStats = {
   storageBytes: number;
   expired: number;
   neverRecalled: number;
+};
+
+// ---------- knowledge graph (v2.1) ----------
+
+/** How one entity relates to another. */
+export type RelationKind =
+  | 'uses'
+  | 'supersedes'
+  | 'contradicts'
+  | 'requires'
+  | 'related';
+
+export const RELATION_KINDS: readonly RelationKind[] = [
+  'uses',
+  'supersedes',
+  'contradicts',
+  'requires',
+  'related',
+] as const;
+
+/** A named thing (service, module, concept) that memories can attach to. */
+export type Entity = {
+  id: string;
+  name: string;
+  /** Free-form classifier, e.g. 'service', 'module', 'concept'. */
+  type: string | null;
+  scope: MemoryScope;
+  projectHash: string | null;
+  description: string | null;
+  createdAt: number;
+  updatedAt: number;
+};
+
+/** A directed edge between two entities. */
+export type Relation = {
+  id: string;
+  fromId: string;
+  toId: string;
+  kind: RelationKind;
+  createdAt: number;
+};
+
+/** Everything known about an entity: its memories and its direct relations. */
+export type EntityContext = {
+  entity: Entity;
+  memories: MemoryRecord[];
+  relations: { relation: Relation; entity: Entity; direction: 'out' | 'in' }[];
 };
 
 export type MnemoOpts = {
